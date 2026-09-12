@@ -16,6 +16,7 @@ import type {
   PaymentStatus,
   ReceiptStatus,
 } from '../model/paymentTypes'
+import { printPaymentReport } from '../utils/paymentReport'
 import { readReceiptFile } from '../utils/receiptFile'
 import './payments.css'
 
@@ -29,6 +30,7 @@ function AdminPaymentsContent({ trip }: { trip: Trip }) {
   const [source, setSource] = useState<PaymentSource | null>(null)
   const [loadError, setLoadError] = useState<string | null>(null)
   const [feedback, setFeedback] = useState<string | null>(null)
+  const [reportError, setReportError] = useState<string | null>(null)
   const [query, setQuery] = useState('')
   const [status, setStatus] = useState<PaymentStatus | 'all'>('all')
   const [formPayment, setFormPayment] = useState<PaymentRecord | null | undefined>()
@@ -75,6 +77,23 @@ function AdminPaymentsContent({ trip }: { trip: Trip }) {
       trip.travelerCpfs.includes(user.cpf) &&
       !rows.some((row) => row.userCpf === user.cpf && row.payment),
   )
+
+  const generateReport = () => {
+    if (!summary) return
+    setReportError(null)
+    const opened = printPaymentReport({ rows, summary, trip })
+    if (opened) {
+      setFeedback('Relatório aberto. Escolha “Salvar como PDF” ou imprima o documento.')
+      return
+    }
+    setFeedback(null)
+    setReportError('O navegador bloqueou a janela do relatório. Permita pop-ups e tente novamente.')
+  }
+  const paymentRegistrationHint = rows.length === 0
+    ? 'Cadastre um viajante antes de registrar o pagamento.'
+    : usersWithoutPayment.length === 0
+      ? 'Todos os viajantes já possuem pagamento. Para lançar ou corrigir parcelas, use “Editar” na tabela.'
+      : null
 
   const replaceLocalPayment = (saved: PaymentRecord) => {
     setSource((current) => {
@@ -157,18 +176,28 @@ function AdminPaymentsContent({ trip }: { trip: Trip }) {
     <div className="payments-page">
       <header className="payments-intro">
         <div><span>Gestão financeira</span><h2>Pagamentos de {trip.name}</h2><p>Acompanhamento dos viajantes da viagem ativa.</p></div>
-        <button
-          className="payment-primary-action"
-          disabled={usersWithoutPayment.length === 0}
-          onClick={() => setFormPayment(null)}
-          type="button"
-        >
-          Registrar pagamento
-        </button>
+        <div className="payment-page-actions">
+          <button onClick={generateReport} type="button">Gerar relatório PDF</button>
+          <div className="payment-registration-action">
+            <button
+              aria-describedby={paymentRegistrationHint ? 'payment-registration-hint' : undefined}
+              className="payment-primary-action"
+              disabled={Boolean(paymentRegistrationHint)}
+              onClick={() => setFormPayment(null)}
+              type="button"
+            >
+              Registrar pagamento
+            </button>
+            {paymentRegistrationHint ? (
+              <small id="payment-registration-hint">{paymentRegistrationHint}</small>
+            ) : null}
+          </div>
+        </div>
       </header>
       <aside className="payment-info-banner">
         Os valores abaixo são estimativas calculadas no cliente a partir das parcelas. A validação financeira definitiva deve ser feita pelo backend.
       </aside>
+      {reportError ? <p className="form-message is-error" role="alert">{reportError}</p> : null}
       {feedback ? <p className="form-message is-success" role="status">{feedback}</p> : null}
       <FinancialSummary summary={summary} />
 

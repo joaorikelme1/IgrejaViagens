@@ -1,4 +1,9 @@
 import { useEffect, useState } from 'react'
+import { loadPaymentSource } from '../../../payments/api/paymentApi'
+import { buildPaymentRows } from '../../../payments/lib/buildPaymentRows'
+import { calculateFinancialSummary } from '../../../payments/lib/paymentCalculations'
+import type { PaymentSource } from '../../../payments/model/paymentTypes'
+import { printPaymentReport } from '../../../payments/utils/paymentReport'
 import { useTrip } from '../../../trips/hooks/useTrip'
 import type { Trip } from '../../../trips/model/tripTypes'
 import { loadAdminDashboard } from '../api/adminDashboardApi'
@@ -26,15 +31,20 @@ function formatDate(value: string) {
 
 function DashboardContent({ trip }: { trip: Trip }) {
   const [source, setSource] = useState<AdminDashboardSource | null>(null)
+  const [paymentSource, setPaymentSource] = useState<PaymentSource | null>(null)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
+  const [reportError, setReportError] = useState<string | null>(null)
   const [reloadKey, setReloadKey] = useState(0)
 
   useEffect(() => {
     let isCurrent = true
 
-    void loadAdminDashboard()
-      .then((loadedSource) => {
-        if (isCurrent) setSource(loadedSource)
+    void Promise.all([loadAdminDashboard(), loadPaymentSource()])
+      .then(([loadedSource, loadedPayments]) => {
+        if (isCurrent) {
+          setSource(loadedSource)
+          setPaymentSource(loadedPayments)
+        }
       })
       .catch((error: unknown) => {
         if (!isCurrent) return
@@ -58,6 +68,7 @@ function DashboardContent({ trip }: { trip: Trip }) {
           onClick={() => {
             setErrorMessage(null)
             setSource(null)
+            setPaymentSource(null)
             setReloadKey((key) => key + 1)
           }}
           type="button"
@@ -68,7 +79,7 @@ function DashboardContent({ trip }: { trip: Trip }) {
     )
   }
 
-  if (!source) {
+  if (!source || !paymentSource) {
     return (
       <div className="dashboard-status" role="status">
         <span className="layout-spinner" aria-hidden="true" />
@@ -83,6 +94,17 @@ function DashboardContent({ trip }: { trip: Trip }) {
     indicators.occupiedSeats > 0 ||
     indicators.paidInstallments > 0 ||
     indicators.pendingInstallments > 0
+  const generateReport = () => {
+    setReportError(null)
+    const opened = printPaymentReport({
+      rows: buildPaymentRows(trip, paymentSource),
+      summary: calculateFinancialSummary(trip, paymentSource.payments),
+      trip,
+    })
+    if (!opened) {
+      setReportError('O navegador bloqueou a janela do relatório. Permita pop-ups e tente novamente.')
+    }
+  }
 
   return (
     <div className="admin-dashboard">
@@ -96,10 +118,16 @@ function DashboardContent({ trip }: { trip: Trip }) {
             {formatDate(trip.date)}
           </p>
         </div>
-        {!hasOperationalData ? (
-          <p className="dashboard-no-data">Ainda não há dados operacionais para esta viagem.</p>
-        ) : null}
+        <div className="dashboard-intro-actions">
+          <button className="dashboard-report-button" onClick={generateReport} type="button">
+            Gerar relatório PDF
+          </button>
+          {!hasOperationalData ? (
+            <p className="dashboard-no-data">Ainda não há dados operacionais para esta viagem.</p>
+          ) : null}
+        </div>
       </header>
+      {reportError ? <p className="form-message is-error" role="alert">{reportError}</p> : null}
 
       <section aria-label="Indicadores da viagem" className="dashboard-stats">
         <StatCard

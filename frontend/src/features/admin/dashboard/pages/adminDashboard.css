@@ -12,6 +12,28 @@
   gap: 1rem;
 }
 
+.dashboard-intro-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.55rem;
+}
+
+.dashboard-report-button {
+  padding: 0.62rem 0.85rem;
+  border: 1px solid var(--color-brand);
+  border-radius: 8px;
+  background: var(--color-brand);
+  color: #fff;
+  cursor: pointer;
+  font-size: 0.7rem;
+  font-weight: 750;
+}
+
+.dashboard-report-button:hover {
+  filter: brightness(1.08);
+}
+
 .dashboard-intro span,
 .dashboard-revenue span,
 .dashboard-stat > span {
@@ -326,6 +348,11 @@
 
   .dashboard-intro {
     flex-direction: column;
+  }
+
+  .dashboard-intro-actions {
+    width: 100%;
+    align-items: stretch;
   }
 
   .dashboard-stats,
