@@ -29,6 +29,14 @@ export const navigationByRole: Record<UserRole, NavigationSection[]> = {
           requiresTrip: true,
         },
         {
+          label: 'Minha passagem',
+          path: '/admin/minha-passagem',
+          icon: 'plane',
+          pageTitle: 'Minha passagem',
+          description: 'Passagem digital do administrador na viagem ativa.',
+          requiresTrip: true,
+        },
+        {
           label: 'Viajantes',
           path: '/admin/viajantes',
           icon: 'users',

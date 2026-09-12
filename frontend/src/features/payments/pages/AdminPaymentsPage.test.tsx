@@ -89,7 +89,7 @@ const source: PaymentSource = {
     user(cpfs[0], 'Ana Completa'),
     user(cpfs[1], 'Bruno Parcial'),
     user(cpfs[2], 'Carla Pendente'),
-    user(cpfs[3], 'Diego Sem Plano'),
+    { ...user(cpfs[3], 'Diego Administrador'), role: 'admin' },
   ],
   payments: [payment(cpfs[0], 4), payment(cpfs[1], 2), payment(cpfs[2], 0)],
 }
@@ -152,7 +152,7 @@ describe('AdminPaymentsPage', () => {
       ['Ana Completa', cpfs[0]],
       ['Bruno Parcial', cpfs[1]],
       ['Carla Pendente', cpfs[2]],
-      ['Diego Sem Plano', cpfs[3]],
+      ['Diego Administrador', cpfs[3]],
     ])
     expect(report.summary).toMatchObject({
       collected: 150,
@@ -165,26 +165,27 @@ describe('AdminPaymentsPage', () => {
     ).toBeInTheDocument()
   })
 
-  it('explica por que um novo pagamento não pode ser registrado', async () => {
+  it('mostra a justificativa como tooltip somente quando o botão está desabilitado', async () => {
     mocks.loadSource.mockResolvedValue({
       ...source,
       payments: [...source.payments, payment(cpfs[3], 0)],
     })
     render(<AdminPaymentsPage />)
 
-    expect(
-      await screen.findByRole('button', { name: 'Registrar pagamento' }),
-    ).toBeDisabled()
-    expect(
-      screen.getByText(/Todos os viajantes já possuem pagamento/),
-    ).toBeInTheDocument()
+    const button = await screen.findByRole('button', { name: 'Registrar pagamento' })
+    const tooltip = screen.getByRole('tooltip', { hidden: true })
+
+    expect(button).toBeDisabled()
+    expect(button.parentElement).toHaveAttribute('tabindex', '0')
+    expect(tooltip).toHaveTextContent(/Todos os viajantes já possuem pagamento/)
+    expect(tooltip).toHaveClass('payment-registration-tooltip')
   })
 
-  it('registra pagamento para viajante ainda não configurado', async () => {
+  it('registra pagamento para administrador participante ainda não configurado', async () => {
     render(<AdminPaymentsPage />)
-    await userEvent.click(
-      await screen.findByRole('button', { name: 'Registrar pagamento' }),
-    )
+    const button = await screen.findByRole('button', { name: 'Registrar pagamento' })
+    expect(screen.queryByRole('tooltip', { hidden: true })).not.toBeInTheDocument()
+    await userEvent.click(button)
     expect(screen.getByRole('combobox', { name: 'Viajante' })).toHaveValue(cpfs[3])
     await userEvent.click(screen.getByRole('button', { name: 'Salvar pagamento' }))
 

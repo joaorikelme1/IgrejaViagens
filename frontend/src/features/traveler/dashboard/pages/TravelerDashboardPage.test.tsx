@@ -105,6 +105,27 @@ describe('TravelerDashboardPage', () => {
     expect(screen.getAllByText('Confirmado')).toHaveLength(2)
   })
 
+  it('não carrega nem exibe passagem para administrador fora da viagem', () => {
+    mocks.useAuth.mockReturnValue({
+      user: {
+        ...traveler,
+        cpf: '52998224725',
+        name: 'Ana Administradora',
+        role: 'admin',
+      },
+    })
+
+    renderDashboard()
+
+    expect(screen.getByRole('status')).toHaveTextContent(
+      'Seu usuário precisa ser adicionado como participante de Retiro 2027',
+    )
+    expect(
+      screen.queryByRole('button', { name: 'Baixar / imprimir passagem' }),
+    ).not.toBeInTheDocument()
+    expect(mocks.loadTravelerDashboard).not.toHaveBeenCalled()
+  })
+
   it('funciona quando o viajante não possui assento', async () => {
     renderDashboard({ ...completeSource, seats: [] })
     expect(await screen.findByText('Não atribuído')).toBeInTheDocument()
@@ -178,7 +199,7 @@ describe('TravelerDashboardPage', () => {
     renderDashboard()
 
     const buttons = await screen.findAllByRole('button', {
-      name: 'Imprimir passagem',
+      name: 'Baixar / imprimir passagem',
     })
     await userEvent.click(buttons[0])
     expect(printSpy).toHaveBeenCalledOnce()

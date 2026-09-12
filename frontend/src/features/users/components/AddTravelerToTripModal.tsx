@@ -49,7 +49,7 @@ export function AddTravelerToTripModal({
         <header className="user-management-modal__header">
           <div>
             <h2 id="add-traveler-title">Adicionar usuário existente</h2>
-            <p>Selecione um viajante do cadastro global.</p>
+            <p>Selecione uma pessoa do cadastro global, inclusive administradores.</p>
           </div>
           <button aria-label="Fechar seleção" onClick={onClose} type="button">
             ×
@@ -89,7 +89,7 @@ export function AddTravelerToTripModal({
                 </article>
               ))
             ) : (
-              <p className="user-empty">Nenhum viajante disponível.</p>
+              <p className="user-empty">Nenhum usuário disponível.</p>
             )}
           </div>
         </div>

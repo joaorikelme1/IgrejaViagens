@@ -57,7 +57,7 @@ const user: SystemUser = {
   kids: [],
   married: false,
   name: 'Ana',
-  role: 'traveler',
+  role: 'admin',
   spouseName: '',
   spouseCpf: '',
 }
@@ -122,7 +122,7 @@ describe('BusManagementPage', () => {
     expect(String(savedBuses?.[1].id)).toMatch(/^bus_/)
   })
 
-  it('associa viajante a assento livre somente após persistência', async () => {
+  it('associa administrador participante a assento livre somente após persistência', async () => {
     render(<BusManagementPage />)
     const freeSeats = await screen.findAllByRole('button', {
       name: 'Assento 1, livre',

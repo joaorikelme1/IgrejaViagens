@@ -73,7 +73,7 @@ function HotelManagementContent({ trip }: { trip: Trip }) {
   const travelers = useMemo(() => {
     const memberCpfs = new Set(trip.travelerCpfs)
     return (source?.users ?? []).filter(
-      (user) => user.role === 'traveler' && memberCpfs.has(user.cpf),
+      (user) => memberCpfs.has(user.cpf),
     )
   }, [source, trip.travelerCpfs])
   const conflicts = source

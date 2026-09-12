@@ -22,6 +22,10 @@ export function AppRouter() {
         <Route element={<ProtectedRoleLayout role="admin" />}>
           <Route path="/admin" element={<AdminDashboardPage />} />
           <Route
+            path="/admin/minha-passagem"
+            element={<TravelerDashboardPage />}
+          />
+          <Route
             path="/admin/viajantes"
             element={<TripTravelersPage />}
           />

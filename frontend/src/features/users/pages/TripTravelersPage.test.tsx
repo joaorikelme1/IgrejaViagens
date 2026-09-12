@@ -61,6 +61,7 @@ const available: SystemUser = {
   ...traveler,
   cpf: '52998224725',
   name: 'Carla Disponível',
+  role: 'admin',
   spouseName: '',
   spouseCpf: '',
   married: false,
@@ -128,7 +129,7 @@ describe('TripTravelersPage', () => {
     expect(screen.getByText(/cadastro correspondente é único/)).toBeInTheDocument()
   })
 
-  it('adiciona usuário existente à viagem', async () => {
+  it('adiciona administrador existente à viagem sem trocar seu perfil', async () => {
     renderPage()
     await userEvent.click(await screen.findByRole('button', { name: 'Adicionar existente' }))
     await userEvent.click(screen.getByRole('button', { name: 'Adicionar Carla Disponível' }))
@@ -139,6 +140,7 @@ describe('TripTravelersPage', () => {
     expect(
       await screen.findByText('Usuário adicionado à viagem e pagamento inicial criado.'),
     ).toBeInTheDocument()
+    expect(screen.getByText('Carla Disponível')).toBeInTheDocument()
   })
 
   it('cria um novo viajante já associado à viagem', async () => {

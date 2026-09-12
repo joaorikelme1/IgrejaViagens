@@ -64,7 +64,7 @@ function BusManagementContent({ trip }: { trip: Trip }) {
   const travelers = useMemo(() => {
     const members = new Set(trip.travelerCpfs)
     return (source?.users ?? []).filter(
-      (user) => user.role === 'traveler' && members.has(user.cpf),
+      (user) => members.has(user.cpf),
     )
   }, [source, trip.travelerCpfs])
   const conflicts = source

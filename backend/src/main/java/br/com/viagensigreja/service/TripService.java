@@ -144,15 +144,9 @@ public class TripService {
     public Trip adicionarViajante(String tripId, String cpfValue) {
         Trip trip = buscar(tripId);
         String cpf = normalizeCpf(cpfValue);
-        User user = userRepository.findById(cpf).orElseThrow(() ->
+        userRepository.findById(cpf).orElseThrow(() ->
                 new ResponseStatusException(HttpStatus.NOT_FOUND, "Usuario nao encontrado.")
         );
-        if (!"traveler".equalsIgnoreCase(user.getRole())) {
-            throw new ResponseStatusException(
-                    HttpStatus.BAD_REQUEST,
-                    "Somente usuarios com perfil de viajante podem ser associados."
-            );
-        }
 
         List<String> travelers = parseTravelerCpfs(trip);
         if (!travelers.contains(cpf)) {
