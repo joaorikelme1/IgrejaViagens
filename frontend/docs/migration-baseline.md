@@ -11,7 +11,7 @@ Baseline registrado em 2026-09-08, antes da criacao da estrutura React.
 
 ## Politica de preservacao
 
-- A nova aplicacao sera desenvolvida somente em `react-app/`.
+- A aplicação React está localizada diretamente na raiz de `frontend/`.
 - Os HTMLs, CSS, JavaScript e assets legados nao serao removidos nem alterados
   sem aprovacao explicita.
 - Migracoes de banco so poderao ser executadas em bancos locais ou efemeros.
