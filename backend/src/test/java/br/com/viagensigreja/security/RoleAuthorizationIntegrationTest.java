@@ -509,6 +509,40 @@ class RoleAuthorizationIntegrationTest {
     }
 
     @Test
+    void adminCanUploadReceiptForTravelerWithoutUsingTravelerSession() throws Exception {
+        MockHttpSession session = login(ADMIN_CPF, "admin-secret");
+        Payment update = payment(
+                "pay-own",
+                TRAVELER_CPF,
+                OWN_TRIP,
+                4,
+                1,
+                true,
+                """
+                {"2":{"data":"data:application/pdf;base64,dGVzdGU=","filename":"parcela-2.pdf","type":"application/pdf","status":"pending","note":""}}
+                """
+        );
+
+        mockMvc.perform(put("/payments/{id}", "pay-own")
+                        .session(session)
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsBytes(update)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.userCpf").value(TRAVELER_CPF));
+
+        Map<?, ?> receipts = objectMapper.readValue(
+                paymentRepository.findById("pay-own").orElseThrow().getReceiptsJson(),
+                Map.class
+        );
+        Map<?, ?> receipt = (Map<?, ?>) receipts.get("2");
+        assertEquals("data:application/pdf;base64,dGVzdGU=", receipt.get("data"));
+        assertEquals("parcela-2.pdf", receipt.get("filename"));
+        assertEquals("pending", receipt.get("status"));
+        assertTrue(paymentRepository.existsById("pay-other"));
+    }
+
+    @Test
     void granularTravelerPaymentUpdateCannotForgeAdministrativeFields() throws Exception {
         MockHttpSession session = login(TRAVELER_CPF, "legacy-secret");
         Payment submitted = payment(

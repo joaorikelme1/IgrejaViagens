@@ -12,6 +12,7 @@ import { AdminPaymentsPage } from './AdminPaymentsPage'
 
 const mocks = vi.hoisted(() => ({
   loadSource: vi.fn(),
+  readReceiptFile: vi.fn(),
   savePayment: vi.fn(),
   useTrip: vi.fn(),
 }))
@@ -20,6 +21,10 @@ vi.mock('../../trips/hooks/useTrip', () => ({ useTrip: mocks.useTrip }))
 vi.mock('../api/paymentApi', () => ({
   loadPaymentSource: mocks.loadSource,
   savePayment: mocks.savePayment,
+}))
+vi.mock('../utils/receiptFile', () => ({
+  readReceiptFile: mocks.readReceiptFile,
+  safeReceiptData: vi.fn().mockReturnValue(null),
 }))
 
 const cpfs = ['11144477735', '52998224725', '93541134780', '98765432100']
@@ -86,6 +91,7 @@ describe('AdminPaymentsPage', () => {
     Object.values(mocks).forEach((mock) => mock.mockReset())
     mocks.useTrip.mockReturnValue({ activeTrip: trip })
     mocks.loadSource.mockResolvedValue(source)
+    mocks.readReceiptFile.mockResolvedValue('data:application/pdf;base64,dGVzdGU=')
     mocks.savePayment.mockImplementation((mutation: PaymentMutation) =>
       Promise.resolve({
         ...mutation,
@@ -152,6 +158,43 @@ describe('AdminPaymentsPage', () => {
     resolveSave?.(source.payments[0])
     expect(
       await screen.findByText('Pagamento persistido com sucesso.'),
+    ).toBeInTheDocument()
+  })
+
+  it('anexa comprovante para o viajante sem trocar de login', async () => {
+    render(<AdminPaymentsPage />)
+    const receiptButtons = await screen.findAllByRole('button', {
+      name: 'Comprovantes',
+    })
+    await userEvent.click(receiptButtons[0])
+    expect(
+      screen.getByRole('heading', { name: 'Comprovantes de Ana Completa' }),
+    ).toBeInTheDocument()
+
+    const input = screen.getByLabelText('Anexar comprovante da parcela 1')
+    const file = new File(['receipt'], 'parcela-1.pdf', {
+      type: 'application/pdf',
+    })
+    await userEvent.upload(input, file)
+
+    await waitFor(() => expect(mocks.savePayment).toHaveBeenCalled())
+    const savedMutation = mocks.savePayment.mock.lastCall?.[0] as
+      | PaymentMutation
+      | undefined
+    expect(savedMutation).toMatchObject({
+      id: source.payments[0].id,
+      userCpf: cpfs[0],
+    })
+    expect(savedMutation?.receipts['1']).toMatchObject({
+      data: 'data:application/pdf;base64,dGVzdGU=',
+      filename: 'parcela-1.pdf',
+      status: 'pending',
+      type: 'application/pdf',
+    })
+    expect(
+      await screen.findByText(
+        'Comprovante anexado pelo administrador e aguardando aprovação.',
+      ),
     ).toBeInTheDocument()
   })
 
