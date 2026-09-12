@@ -1,5 +1,6 @@
 package br.com.viagensigreja.controller;
 
+import br.com.viagensigreja.dto.ProfilePhotoDTO;
 import br.com.viagensigreja.dto.UserResponseDTO;
 import br.com.viagensigreja.mapper.UserMapper;
 import br.com.viagensigreja.model.User;
@@ -61,6 +62,19 @@ public class UserController {
                 ? service.atualizar(cpfLimpo, user)
                 : service.concluirPrimeiroAcesso(cpfLimpo, user.getPassword());
         return userMapper.toResponse(updated);
+    }
+
+    @PutMapping("/{cpf}/profile-photo")
+    @PreAuthorize("hasAnyRole('ADMIN', 'TRAVELER')")
+    public ProfilePhotoDTO atualizarFotoPerfil(
+            @PathVariable String cpf,
+            @RequestBody ProfilePhotoDTO request,
+            Authentication authentication
+    ) {
+        String cpfLimpo = cpf.replaceAll("\\D", "");
+        authorization.requireSelfOrAdmin(authentication, cpfLimpo);
+        User updated = service.atualizarFotoPerfil(cpfLimpo, request.profilePhoto());
+        return new ProfilePhotoDTO(updated.getProfilePhoto());
     }
 
     @PutMapping("/bulk")

@@ -44,8 +44,8 @@
 
 .sidebar-brand strong,
 .sidebar-brand span,
-.sidebar-user strong,
-.sidebar-user span {
+.sidebar-user > div strong,
+.sidebar-user > div span {
   display: block;
 }
 
@@ -147,18 +147,18 @@
   font-size: 0.78rem;
 }
 
-.sidebar-user strong,
-.sidebar-user span {
+.sidebar-user > div strong,
+.sidebar-user > div span {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.sidebar-user strong {
+.sidebar-user > div strong {
   font-size: 0.76rem;
 }
 
-.sidebar-user span {
+.sidebar-user > div span {
   color: rgb(255 255 255 / 38%);
   font-size: 0.66rem;
 }
@@ -627,7 +627,6 @@
   }
 
   .topbar-title > div span,
-  .topbar-avatar,
   .active-trip-button__icon,
   .active-trip-button > .app-icon {
     display: none;

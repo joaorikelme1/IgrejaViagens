@@ -4,6 +4,7 @@ import { useAuth } from '../../auth/hooks/useAuth'
 import { TripSelectorModal } from '../../trips/components/TripSelectorModal'
 import { useTrip } from '../../trips/hooks/useTrip'
 import type { UserRole } from '../../auth/model/authTypes'
+import { ProfilePhotoModal } from '../../auth/components/ProfilePhotoModal'
 import { getNavigationItem } from '../config/navigation'
 import { Sidebar } from './Sidebar'
 import { Topbar } from './Topbar'
@@ -14,10 +15,11 @@ interface AppLayoutProps {
 }
 
 export function AppLayout({ role }: AppLayoutProps) {
-  const { user } = useAuth()
+  const { signIn, user } = useAuth()
   const trip = useTrip()
   const location = useLocation()
   const [isSidebarOpen, setIsSidebarOpen] = useState(false)
+  const [isProfileOpen, setIsProfileOpen] = useState(false)
   const page = getNavigationItem(role, location.pathname)
 
   useEffect(() => {
@@ -43,6 +45,10 @@ export function AppLayout({ role }: AppLayoutProps) {
       <Sidebar
         isOpen={isSidebarOpen}
         onNavigate={() => setIsSidebarOpen(false)}
+        onOpenProfile={() => {
+          setIsSidebarOpen(false)
+          setIsProfileOpen(true)
+        }}
         role={role}
         user={user}
       />
@@ -57,6 +63,7 @@ export function AppLayout({ role }: AppLayoutProps) {
         <Topbar
           isMenuOpen={isSidebarOpen}
           onOpenMenu={() => setIsSidebarOpen(true)}
+          onOpenProfile={() => setIsProfileOpen(true)}
           pageTitle={page?.pageTitle ?? 'Igreja Viagens'}
           user={user}
         />
@@ -66,6 +73,13 @@ export function AppLayout({ role }: AppLayoutProps) {
       </div>
 
       <TripSelectorModal isOpen={showTripSelector} role={role} />
+      {isProfileOpen ? (
+        <ProfilePhotoModal
+          onClose={() => setIsProfileOpen(false)}
+          onSaved={(profilePhoto) => signIn({ ...user, profilePhoto })}
+          user={user}
+        />
+      ) : null}
     </div>
   )
 }

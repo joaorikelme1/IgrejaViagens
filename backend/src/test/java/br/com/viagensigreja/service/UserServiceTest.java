@@ -16,6 +16,7 @@ import java.util.Optional;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
@@ -59,6 +60,36 @@ class UserServiceTest {
 
         assertNotEquals("nova-senha", salvo.getPassword());
         assertTrue(passwordEncoder.matches("nova-senha", salvo.getPassword()));
+    }
+
+    @Test
+    void atualizaERemoveFotoDoProprioPerfil() {
+        UserRepository repository = mock(UserRepository.class);
+        UserService service = service(repository);
+        User existente = usuario("senha-existente", "Maria");
+        String foto = "data:image/png;base64,YWJj";
+
+        when(repository.findById(existente.getCpf())).thenReturn(Optional.of(existente));
+        when(repository.save(any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        assertEquals(foto, service.atualizarFotoPerfil(existente.getCpf(), foto).getProfilePhoto());
+        assertNull(service.atualizarFotoPerfil(existente.getCpf(), "").getProfilePhoto());
+    }
+
+    @Test
+    void rejeitaFotoComFormatoInseguro() {
+        UserRepository repository = mock(UserRepository.class);
+        UserService service = service(repository);
+        User existente = usuario("senha-existente", "Maria");
+        when(repository.findById(existente.getCpf())).thenReturn(Optional.of(existente));
+
+        assertThrows(
+                org.springframework.web.server.ResponseStatusException.class,
+                () -> service.atualizarFotoPerfil(
+                        existente.getCpf(),
+                        "data:image/svg+xml;base64,PHN2Zz4="
+                )
+        );
     }
 
     @Test

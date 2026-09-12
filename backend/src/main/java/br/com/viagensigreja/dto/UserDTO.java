@@ -16,6 +16,7 @@ public class UserDTO {
     private String spouseCpf;
 
     private boolean hasKids;
+    private String profilePhoto;
     private List<String> kids;
     private List<String> childCpfs;
 }

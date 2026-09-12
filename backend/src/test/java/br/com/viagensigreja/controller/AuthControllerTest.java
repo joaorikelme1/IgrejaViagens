@@ -64,7 +64,9 @@ class AuthControllerTest {
                 List.of()
         );
         when(authService.authenticate(any(LoginDTO.class))).thenReturn(authentication);
-        when(authService.findAuthenticatedUser(authentication)).thenReturn(usuarioComSenha());
+        User user = usuarioComSenha();
+        user.setProfilePhoto("data:image/png;base64,YWJj");
+        when(authService.findAuthenticatedUser(authentication)).thenReturn(user);
 
         mockMvc.perform(post("/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -73,6 +75,7 @@ class AuthControllerTest {
                 .andExpect(jsonPath("$.cpf").value("52998224725"))
                 .andExpect(jsonPath("$.name").value("Maria"))
                 .andExpect(jsonPath("$.birthdate").value("1990-05-12"))
+                .andExpect(jsonPath("$.profilePhoto").value("data:image/png;base64,YWJj"))
                 .andExpect(jsonPath("$.password").doesNotExist());
 
         verify(sessionAuthenticationStrategy).onAuthentication(

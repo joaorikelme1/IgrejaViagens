@@ -7,15 +7,18 @@ import br.com.viagensigreja.service.UserService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.MediaType;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.util.List;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.springframework.test.web.servlet.setup.MockMvcBuilders.standaloneSetup;
@@ -23,15 +26,17 @@ import static org.springframework.test.web.servlet.setup.MockMvcBuilders.standal
 class UserControllerTest {
 
     private UserService userService;
+    private ResourceAuthorizationService authorization;
     private MockMvc mockMvc;
 
     @BeforeEach
     void setUp() {
         userService = mock(UserService.class);
+        authorization = mock(ResourceAuthorizationService.class);
         UserController controller = new UserController(
                 userService,
                 new UserMapper(),
-                mock(ResourceAuthorizationService.class)
+                authorization
         );
         mockMvc = standaloneSetup(controller).build();
     }
@@ -71,6 +76,28 @@ class UserControllerTest {
                 .andExpect(jsonPath("$.cpf").value("52998224725"))
                 .andExpect(jsonPath("$.name").value("Maria"))
                 .andExpect(jsonPath("$.password").doesNotExist());
+    }
+
+    @Test
+    void atualizaFotoDoProprioPerfil() throws Exception {
+        User user = usuarioComSenha();
+        String photo = "data:image/png;base64,YWJj";
+        user.setProfilePhoto(photo);
+        when(userService.atualizarFotoPerfil("52998224725", photo)).thenReturn(user);
+        var authentication = UsernamePasswordAuthenticationToken.authenticated(
+                "52998224725",
+                null,
+                List.of()
+        );
+
+        mockMvc.perform(put("/users/52998224725/profile-photo")
+                        .principal(authentication)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"profilePhoto\":\"data:image/png;base64,YWJj\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.profilePhoto").value(photo));
+
+        verify(authorization).requireSelfOrAdmin(authentication, "52998224725");
     }
 
     private User usuarioComSenha() {
