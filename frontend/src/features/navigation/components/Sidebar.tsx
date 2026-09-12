@@ -1,17 +1,19 @@
 import { NavLink } from 'react-router'
 import { useLogout } from '../../auth/hooks/useLogout'
 import type { AuthUser, UserRole } from '../../auth/model/authTypes'
+import { ProfileAvatar } from '../../auth/components/ProfileAvatar'
 import { AppIcon } from '../../../shared/components/AppIcon'
 import { navigationByRole } from '../config/navigation'
 
 interface SidebarProps {
   isOpen: boolean
   onNavigate: () => void
+  onOpenProfile: () => void
   role: UserRole
   user: AuthUser
 }
 
-export function Sidebar({ isOpen, onNavigate, role, user }: SidebarProps) {
+export function Sidebar({ isOpen, onNavigate, onOpenProfile, role, user }: SidebarProps) {
   const logout = useLogout()
 
   return (
@@ -52,9 +54,12 @@ export function Sidebar({ isOpen, onNavigate, role, user }: SidebarProps) {
 
       <footer className="sidebar-footer">
         <div className="sidebar-user">
-          <span className="sidebar-avatar" aria-hidden="true">
-            {user.name.charAt(0).toUpperCase()}
-          </span>
+          <ProfileAvatar
+            className="sidebar-avatar"
+            name={user.name}
+            onClick={onOpenProfile}
+            profilePhoto={user.profilePhoto}
+          />
           <div>
             <strong>{user.name}</strong>
             <span>{role === 'admin' ? 'Administrador' : 'Viajante'}</span>

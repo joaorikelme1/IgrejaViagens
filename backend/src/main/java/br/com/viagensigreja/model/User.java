@@ -30,6 +30,10 @@ public class User {
 
     private boolean hasKids;
 
+    @Column(columnDefinition = "TEXT")
+    @ToString.Exclude
+    private String profilePhoto;
+
     @ElementCollection
     @CollectionTable(name = "user_kids", joinColumns = @JoinColumn(name = "user_cpf"))
     private List<String> kids;
@@ -53,6 +57,6 @@ public class User {
             List<String> kids
     ) {
         this(cpf, name, password, role, birthdate, firstLogin, married,
-                spouseName, null, hasKids, kids, new java.util.LinkedHashSet<>());
+                spouseName, null, hasKids, null, kids, new java.util.LinkedHashSet<>());
     }
 }

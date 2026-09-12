@@ -73,7 +73,6 @@ function AdminPaymentsContent({ trip }: { trip: Trip }) {
     : null
   const usersWithoutPayment = (source?.users ?? []).filter(
     (user) =>
-      user.role === 'traveler' &&
       trip.travelerCpfs.includes(user.cpf) &&
       !rows.some((row) => row.userCpf === user.cpf && row.payment),
   )
@@ -178,7 +177,11 @@ function AdminPaymentsContent({ trip }: { trip: Trip }) {
         <div><span>Gestão financeira</span><h2>Pagamentos de {trip.name}</h2><p>Acompanhamento dos viajantes da viagem ativa.</p></div>
         <div className="payment-page-actions">
           <button onClick={generateReport} type="button">Gerar relatório PDF</button>
-          <div className="payment-registration-action">
+          <div
+            aria-describedby={paymentRegistrationHint ? 'payment-registration-hint' : undefined}
+            className="payment-registration-action"
+            tabIndex={paymentRegistrationHint ? 0 : undefined}
+          >
             <button
               aria-describedby={paymentRegistrationHint ? 'payment-registration-hint' : undefined}
               className="payment-primary-action"
@@ -189,7 +192,13 @@ function AdminPaymentsContent({ trip }: { trip: Trip }) {
               Registrar pagamento
             </button>
             {paymentRegistrationHint ? (
-              <small id="payment-registration-hint">{paymentRegistrationHint}</small>
+              <span
+                className="payment-registration-tooltip"
+                id="payment-registration-hint"
+                role="tooltip"
+              >
+                {paymentRegistrationHint}
+              </span>
             ) : null}
           </div>
         </div>

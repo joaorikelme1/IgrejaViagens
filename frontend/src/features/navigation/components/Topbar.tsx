@@ -1,10 +1,12 @@
 import type { AuthUser } from '../../auth/model/authTypes'
 import { useTrip } from '../../trips/hooks/useTrip'
 import { AppIcon } from '../../../shared/components/AppIcon'
+import { ProfileAvatar } from '../../auth/components/ProfileAvatar'
 
 interface TopbarProps {
   isMenuOpen: boolean
   onOpenMenu: () => void
+  onOpenProfile: () => void
   pageTitle: string
   user: AuthUser
 }
@@ -12,6 +14,7 @@ interface TopbarProps {
 export function Topbar({
   isMenuOpen,
   onOpenMenu,
+  onOpenProfile,
   pageTitle,
   user,
 }: TopbarProps) {
@@ -56,9 +59,12 @@ export function Topbar({
           </span>
           <AppIcon name="chevronRight" />
         </button>
-        <span className="topbar-avatar" title={user.name}>
-          {user.name.charAt(0).toUpperCase()}
-        </span>
+        <ProfileAvatar
+          className="topbar-avatar"
+          name={user.name}
+          onClick={onOpenProfile}
+          profilePhoto={user.profilePhoto}
+        />
       </div>
     </header>
   )

@@ -10,6 +10,7 @@ export interface AuthUser {
   spouseName: string
   hasKids: boolean
   kids: string[]
+  profilePhoto?: string
 }
 
 export interface LoginCredentials {

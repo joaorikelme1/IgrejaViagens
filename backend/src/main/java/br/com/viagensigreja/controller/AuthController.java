@@ -1,7 +1,6 @@
 package br.com.viagensigreja.controller;
 
 import br.com.viagensigreja.dto.LoginDTO;
-import br.com.viagensigreja.dto.UserResponseDTO;
 import br.com.viagensigreja.mapper.UserMapper;
 import br.com.viagensigreja.model.User;
 import br.com.viagensigreja.service.AuthService;
@@ -63,7 +62,7 @@ public class AuthController {
             SecurityContextHolder.setContext(context);
             securityContextRepository.saveContext(context, request, response);
 
-            UserResponseDTO responseBody = userMapper.toResponse(user);
+            var responseBody = userMapper.toAuthenticatedResponse(user);
             return ResponseEntity.ok(responseBody);
         } catch (AuthenticationException exception) {
             return unauthorized();
@@ -77,7 +76,7 @@ public class AuthController {
             return unauthorized();
         }
 
-        return ResponseEntity.ok(userMapper.toResponse(user));
+        return ResponseEntity.ok(userMapper.toAuthenticatedResponse(user));
     }
 
     @GetMapping("/csrf")

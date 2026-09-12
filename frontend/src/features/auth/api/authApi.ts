@@ -44,7 +44,21 @@ function toAuthUser(payload: unknown): AuthUser {
     spouseName: readString(user.spouseName),
     hasKids: user.hasKids === true,
     kids: readKids(user.kids),
+    profilePhoto: readString(user.profilePhoto),
   }
+}
+
+export async function saveProfilePhoto(cpfValue: string, profilePhoto: string) {
+  const cpf = stripCpf(cpfValue)
+  const response = asRecord(await httpRequest<unknown>(
+    `/users/${encodeURIComponent(cpf)}/profile-photo`,
+    {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ profilePhoto: profilePhoto || null }),
+    },
+  ))
+  return readString(response.profilePhoto)
 }
 
 export async function getCurrentUser() {

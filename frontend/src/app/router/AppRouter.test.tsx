@@ -139,6 +139,29 @@ describe('rotas e layout protegido', () => {
     ).toBeInTheDocument()
   })
 
+  it('permite que administrador participante abra e baixe a própria passagem', async () => {
+    const adminTrip = {
+      ...trip,
+      travelersJson: JSON.stringify([admin.cpf]),
+    }
+    writeActiveTripId(adminTrip.id)
+    resourceHandler = (input) =>
+      Promise.resolve(
+        requestPath(input) === '/trips'
+          ? jsonResponse([adminTrip])
+          : jsonResponse([]),
+      )
+
+    renderRoute('/admin/minha-passagem', admin)
+
+    expect(
+      await screen.findByRole('heading', { name: 'Olá, Ana' }),
+    ).toBeInTheDocument()
+    expect(
+      screen.getAllByRole('button', { name: 'Baixar / imprimir passagem' }),
+    ).not.toHaveLength(0)
+  })
+
   it('impede viajante de acessar rota administrativa', async () => {
     writeActiveTripId(trip.id)
     resourceHandler = (input) =>
@@ -162,6 +185,7 @@ describe('rotas e layout protegido', () => {
     })
 
     expect(within(adminSidebar).getByText('Viajantes')).toBeInTheDocument()
+    expect(within(adminSidebar).getByText('Minha passagem')).toBeInTheDocument()
     expect(within(adminSidebar).getByText('Cadastro Global')).toBeInTheDocument()
     expect(within(adminSidebar).queryByText('Início')).not.toBeInTheDocument()
 

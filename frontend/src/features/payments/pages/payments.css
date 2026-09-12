@@ -19,7 +19,10 @@
 }
 
 .payments-intro {
+  position: relative;
+  z-index: 5;
   align-items: flex-start;
+  overflow: visible;
 }
 
 .payment-page-actions {
@@ -29,17 +32,38 @@
 
 .payment-registration-action {
   position: relative;
-  display: grid;
-  justify-items: end;
-  gap: 0.3rem;
+  display: flex;
+  align-items: center;
 }
 
-.payment-registration-action small {
-  max-width: 290px;
-  color: var(--color-text-muted);
-  font-size: 0.6rem;
-  line-height: 1.35;
-  text-align: right;
+.payment-registration-tooltip {
+  position: absolute;
+  top: calc(100% + 0.55rem);
+  right: 0;
+  z-index: 20;
+  width: max-content;
+  max-width: min(310px, 80vw);
+  padding: 0.55rem 0.65rem;
+  border-radius: 7px;
+  background: var(--color-text);
+  box-shadow: 0 8px 24px rgb(18 22 65 / 16%);
+  color: #fff;
+  font-size: 0.65rem;
+  line-height: 1.4;
+  opacity: 0;
+  pointer-events: none;
+  text-align: left;
+  transform: translateY(4px);
+  transition: opacity 140ms ease, transform 140ms ease;
+  visibility: hidden;
+}
+
+.payment-registration-action:hover .payment-registration-tooltip,
+.payment-registration-action:focus .payment-registration-tooltip,
+.payment-registration-action:focus-within .payment-registration-tooltip {
+  opacity: 1;
+  transform: translateY(0);
+  visibility: visible;
 }
 
 .payments-intro > div > span {
@@ -606,9 +630,9 @@
     justify-items: stretch;
   }
 
-  .payment-registration-action small {
-    max-width: none;
-    text-align: left;
+  .payment-registration-tooltip {
+    right: auto;
+    left: 0;
   }
 
   .payment-filters input,

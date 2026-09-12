@@ -11,7 +11,7 @@ export function TicketPrint({ compact = false }: TicketPrintProps) {
       onClick={printTicket}
       type="button"
     >
-      Imprimir passagem
+      Baixar / imprimir passagem
     </button>
   )
 }

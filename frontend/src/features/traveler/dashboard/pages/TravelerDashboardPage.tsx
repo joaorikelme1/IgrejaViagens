@@ -101,8 +101,23 @@ function TravelerDashboardContent({
 
 export function TravelerDashboardPage() {
   const { user } = useAuth()
-  const { activeTrip } = useTrip()
+  const { activeTrip, openSelector } = useTrip()
   if (!user || !activeTrip) return null
+
+  if (!activeTrip.travelerCpfs.includes(user.cpf)) {
+    return (
+      <div className="traveler-dashboard-status" role="status">
+        <h2>Passagem ainda não disponível</h2>
+        <p>
+          Seu usuário precisa ser adicionado como participante de {activeTrip.name}
+          {' '}antes que a passagem seja gerada.
+        </p>
+        <button onClick={openSelector} type="button">
+          Trocar viagem
+        </button>
+      </div>
+    )
+  }
 
   return (
     <TravelerDashboardContent

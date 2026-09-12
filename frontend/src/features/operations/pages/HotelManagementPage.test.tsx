@@ -60,7 +60,7 @@ function systemUser(cpf: string, name: string): SystemUser {
     kids: [],
     married: false,
     name,
-    role: 'traveler',
+    role: name === 'Bruno' ? 'admin' : 'traveler',
     spouseName: '',
     spouseCpf: '',
   }
@@ -124,7 +124,7 @@ describe('HotelManagementPage', () => {
     expect(savedHotels?.[1].name).toBe('Hotel Novo')
   })
 
-  it('distribui viajantes sem remover o ocupante atual', async () => {
+  it('inclui administrador participante no quarto sem remover o ocupante atual', async () => {
     render(<HotelManagementPage />)
     await userEvent.click(await screen.findByRole('button', { name: 'Distribuir' }))
     expect(screen.getByRole('checkbox', { name: /Ana/ })).toBeChecked()

@@ -57,7 +57,7 @@ const user: SystemUser = {
   kids: [],
   married: false,
   name: 'Ana',
-  role: 'traveler',
+  role: 'admin',
   spouseName: '',
   spouseCpf: '',
 }
@@ -94,8 +94,13 @@ describe('BusManagementPage', () => {
   afterEach(() => cleanup())
 
   it('mostra pisos, assentos e ocupação usando o floor do backend', async () => {
-    render(<BusManagementPage />)
+    const { container } = render(<BusManagementPage />)
     expect(await screen.findByText('Ônibus bus-existing')).toBeInTheDocument()
+    expect(container.querySelector('.transport-bus-card')).toHaveClass('has-two-floors')
+    expect(container.querySelector('.transport-bus-card__info')).toBeInTheDocument()
+    expect(container.querySelector('.transport-bus-card__actions')).toContainElement(
+      screen.getByRole('button', { name: 'Editar ônibus' }),
+    )
     expect(screen.getByText('1º piso')).toBeInTheDocument()
     expect(screen.getByText('2º piso')).toBeInTheDocument()
     expect(
@@ -117,7 +122,7 @@ describe('BusManagementPage', () => {
     expect(String(savedBuses?.[1].id)).toMatch(/^bus_/)
   })
 
-  it('associa viajante a assento livre somente após persistência', async () => {
+  it('associa administrador participante a assento livre somente após persistência', async () => {
     render(<BusManagementPage />)
     const freeSeats = await screen.findAllByRole('button', {
       name: 'Assento 1, livre',

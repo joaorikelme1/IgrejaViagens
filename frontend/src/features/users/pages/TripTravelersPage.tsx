@@ -77,7 +77,7 @@ function TripTravelersContent({ trip }: { trip: Trip }) {
   const normalizedMembers = new Set(memberCpfs.map(stripCpf))
   const capacityReached = normalizedMembers.size >= trip.maxPeople
   const availableUsers = (source?.users ?? []).filter(
-    (user) => user.role === 'traveler' && !normalizedMembers.has(user.cpf),
+    (user) => !normalizedMembers.has(user.cpf),
   )
 
   const addExisting = async (cpf: string) => {

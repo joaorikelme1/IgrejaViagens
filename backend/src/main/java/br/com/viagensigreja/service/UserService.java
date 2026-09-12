@@ -16,6 +16,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.util.HashMap;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -26,6 +27,8 @@ import tools.jackson.databind.ObjectMapper;
 
 @Service
 public class UserService {
+
+    private static final int MAX_PROFILE_PHOTO_BYTES = 600_000;
 
     private final UserRepository repository;
     private final PasswordEncoder passwordEncoder;
@@ -70,6 +73,7 @@ public class UserService {
             );
         }
         user.setCpf(cpf);
+        user.setProfilePhoto(null);
         validarDados(user, true);
         codificarNovaSenha(user);
         User created = repository.save(user);
@@ -89,6 +93,7 @@ public class UserService {
 
         String conjugeAnterior = normalizeCpf(usuarioExistente.getSpouseCpf());
         novosDados.setCpf(cpfLimpo);
+        novosDados.setProfilePhoto(usuarioExistente.getProfilePhoto());
         validarDados(novosDados, false);
         if ("admin".equalsIgnoreCase(usuarioExistente.getRole())
                 && !"admin".equalsIgnoreCase(novosDados.getRole())
@@ -142,9 +147,11 @@ public class UserService {
     @Transactional
     public List<User> substituirTodos(List<User> users) {
         Map<String, String> senhasExistentes = new HashMap<>();
-        repository.findAll().forEach(user ->
-                senhasExistentes.put(user.getCpf(), user.getPassword())
-        );
+        Map<String, String> fotosExistentes = new HashMap<>();
+        repository.findAll().forEach(user -> {
+            senhasExistentes.put(user.getCpf(), user.getPassword());
+            fotosExistentes.put(user.getCpf(), user.getProfilePhoto());
+        });
 
         users.forEach(user -> {
             user.setCpf(user.getCpf().replaceAll("\\D", ""));
@@ -154,6 +161,7 @@ public class UserService {
             } else {
                 codificarNovaSenha(user);
             }
+            user.setProfilePhoto(fotosExistentes.get(user.getCpf()));
         });
 
         repository.deleteAll();
@@ -162,6 +170,17 @@ public class UserService {
 
     public User buscarPorCpf(String cpf) {
         return repository.findById(cpf).orElse(null);
+    }
+
+    @Transactional
+    public User atualizarFotoPerfil(String cpf, String profilePhoto) {
+        User user = repository.findById(normalizeCpf(cpf))
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.NOT_FOUND,
+                        "Usuario nao encontrado."
+                ));
+        user.setProfilePhoto(validarFotoPerfil(profilePhoto));
+        return repository.save(user);
     }
 
     @Transactional
@@ -203,6 +222,49 @@ public class UserService {
         if (user.getPassword() != null) {
             user.setPassword(passwordEncoder.encode(user.getPassword()));
         }
+    }
+
+    private String validarFotoPerfil(String value) {
+        if (value == null || value.isBlank()) {
+            return null;
+        }
+
+        String prefix;
+        if (value.startsWith("data:image/jpeg;base64,")) {
+            prefix = "data:image/jpeg;base64,";
+        } else if (value.startsWith("data:image/png;base64,")) {
+            prefix = "data:image/png;base64,";
+        } else if (value.startsWith("data:image/webp;base64,")) {
+            prefix = "data:image/webp;base64,";
+        } else {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "A foto deve estar nos formatos JPG, PNG ou WEBP."
+            );
+        }
+
+        if (value.length() > 800_100) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "A foto de perfil deve ter no maximo 600 KB."
+            );
+        }
+
+        try {
+            byte[] decoded = Base64.getDecoder().decode(value.substring(prefix.length()));
+            if (decoded.length == 0 || decoded.length > MAX_PROFILE_PHOTO_BYTES) {
+                throw new ResponseStatusException(
+                        HttpStatus.BAD_REQUEST,
+                        "A foto de perfil deve ter no maximo 600 KB."
+                );
+            }
+        } catch (IllegalArgumentException exception) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Os dados da foto de perfil sao invalidos."
+            );
+        }
+        return value;
     }
 
     private void validarDados(User user, boolean passwordRequired) {

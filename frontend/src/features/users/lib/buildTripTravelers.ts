@@ -33,7 +33,7 @@ export function buildTripTravelers(
   const memberCpfs = new Set(travelerCpfs.map(stripCpf))
 
   return source.users
-    .filter((user) => user.role === 'traveler' && memberCpfs.has(user.cpf))
+    .filter((user) => memberCpfs.has(user.cpf))
     .map((user) => {
       const paymentSource = source.payments.find(
         (payment) => payment.userCpf === user.cpf,
