@@ -1,10 +1,17 @@
 import { cleanup, render, screen } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { Trip } from '../../../trips/model/tripTypes'
+import type {
+  FinancialSummaryValue,
+  PaymentRow,
+} from '../../../payments/model/paymentTypes'
 import { AdminDashboardPage } from './AdminDashboardPage'
 
 const mocks = vi.hoisted(() => ({
   loadAdminDashboard: vi.fn(),
+  loadPaymentSource: vi.fn(),
+  printReport: vi.fn(),
   useTrip: vi.fn(),
 }))
 
@@ -14,6 +21,14 @@ vi.mock('../api/adminDashboardApi', () => ({
 
 vi.mock('../../../trips/hooks/useTrip', () => ({
   useTrip: mocks.useTrip,
+}))
+
+vi.mock('../../../payments/api/paymentApi', () => ({
+  loadPaymentSource: mocks.loadPaymentSource,
+}))
+
+vi.mock('../../../payments/utils/paymentReport', () => ({
+  printPaymentReport: mocks.printReport,
 }))
 
 const trip: Trip = {
@@ -35,8 +50,10 @@ const trip: Trip = {
 
 describe('AdminDashboardPage', () => {
   beforeEach(() => {
+    Object.values(mocks).forEach((mock) => mock.mockReset())
     mocks.useTrip.mockReturnValue({ activeTrip: trip })
-    mocks.loadAdminDashboard.mockReset()
+    mocks.loadPaymentSource.mockResolvedValue({ users: [], payments: [] })
+    mocks.printReport.mockReturnValue(true)
   })
 
   afterEach(cleanup)
@@ -86,5 +103,37 @@ describe('AdminDashboardPage', () => {
     expect(screen.getByRole('img', { name: 'Parcelas pagas e pendentes' })).toBeInTheDocument()
     expect(screen.getByRole('img', { name: 'Assentos ocupados e livres' })).toBeInTheDocument()
     expect(screen.getByRole('img', { name: 'Parcelas pagas por viajante' })).toBeInTheDocument()
+  })
+
+  it('gera o relatório PDF pelo dashboard', async () => {
+    const reportTrip = {
+      ...trip,
+      travelersJson: '["11144477735"]',
+      travelerCpfs: ['11144477735'],
+    }
+    mocks.useTrip.mockReturnValue({ activeTrip: reportTrip })
+    mocks.loadAdminDashboard.mockResolvedValue({ users: [], payments: [], seats: [] })
+    mocks.loadPaymentSource.mockResolvedValue({
+      users: [{
+        birthdate: '', childCpfs: [], cpf: '11144477735', firstLogin: false,
+        hasKids: false, kids: [], married: false, name: 'Tiago Viajante',
+        role: 'traveler', spouseName: '', spouseCpf: '',
+      }],
+      payments: [],
+    })
+
+    render(<AdminDashboardPage />)
+    await userEvent.click(
+      await screen.findByRole('button', { name: 'Gerar relatório PDF' }),
+    )
+
+    const report = mocks.printReport.mock.lastCall?.[0] as {
+      rows: PaymentRow[]
+      summary: FinancialSummaryValue
+      trip: Trip
+    }
+    expect(report.rows.map((row) => row.name)).toEqual(['Tiago Viajante'])
+    expect(report.summary.expectedTotal).toBe(800)
+    expect(report.trip).toBe(reportTrip)
   })
 })

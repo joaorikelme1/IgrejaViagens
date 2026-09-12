@@ -6,12 +6,15 @@ import type { SystemUser } from '../../users/model/userTypes'
 import type {
   PaymentMutation,
   PaymentRecord,
+  PaymentRow,
   PaymentSource,
+  FinancialSummaryValue,
 } from '../model/paymentTypes'
 import { AdminPaymentsPage } from './AdminPaymentsPage'
 
 const mocks = vi.hoisted(() => ({
   loadSource: vi.fn(),
+  printReport: vi.fn(),
   readReceiptFile: vi.fn(),
   savePayment: vi.fn(),
   useTrip: vi.fn(),
@@ -25,6 +28,9 @@ vi.mock('../api/paymentApi', () => ({
 vi.mock('../utils/receiptFile', () => ({
   readReceiptFile: mocks.readReceiptFile,
   safeReceiptData: vi.fn().mockReturnValue(null),
+}))
+vi.mock('../utils/paymentReport', () => ({
+  printPaymentReport: mocks.printReport,
 }))
 
 const cpfs = ['11144477735', '52998224725', '93541134780', '98765432100']
@@ -93,6 +99,7 @@ describe('AdminPaymentsPage', () => {
     Object.values(mocks).forEach((mock) => mock.mockReset())
     mocks.useTrip.mockReturnValue({ activeTrip: trip })
     mocks.loadSource.mockResolvedValue(source)
+    mocks.printReport.mockReturnValue(true)
     mocks.readReceiptFile.mockResolvedValue('data:application/pdf;base64,dGVzdGU=')
     mocks.savePayment.mockImplementation((mutation: PaymentMutation) =>
       Promise.resolve({
@@ -128,6 +135,49 @@ describe('AdminPaymentsPage', () => {
     await userEvent.selectOptions(screen.getByLabelText('Situação'), 'pending')
     expect(screen.getByText('Carla Pendente')).toBeInTheDocument()
     expect(screen.queryByText('Bruno Parcial')).not.toBeInTheDocument()
+  })
+
+  it('gera relatório completo da viagem ativa', async () => {
+    render(<AdminPaymentsPage />)
+    await userEvent.click(
+      await screen.findByRole('button', { name: 'Gerar relatório PDF' }),
+    )
+
+    const report = mocks.printReport.mock.lastCall?.[0] as {
+      rows: PaymentRow[]
+      summary: FinancialSummaryValue
+      trip: Trip
+    }
+    expect(report.rows.map((row) => [row.name, row.userCpf])).toEqual([
+      ['Ana Completa', cpfs[0]],
+      ['Bruno Parcial', cpfs[1]],
+      ['Carla Pendente', cpfs[2]],
+      ['Diego Sem Plano', cpfs[3]],
+    ])
+    expect(report.summary).toMatchObject({
+      collected: 150,
+      expectedTotal: 400,
+      pendingValue: 250,
+    })
+    expect(report.trip).toBe(trip)
+    expect(
+      screen.getByText(/Relatório aberto\. Escolha/),
+    ).toBeInTheDocument()
+  })
+
+  it('explica por que um novo pagamento não pode ser registrado', async () => {
+    mocks.loadSource.mockResolvedValue({
+      ...source,
+      payments: [...source.payments, payment(cpfs[3], 0)],
+    })
+    render(<AdminPaymentsPage />)
+
+    expect(
+      await screen.findByRole('button', { name: 'Registrar pagamento' }),
+    ).toBeDisabled()
+    expect(
+      screen.getByText(/Todos os viajantes já possuem pagamento/),
+    ).toBeInTheDocument()
   })
 
   it('registra pagamento para viajante ainda não configurado', async () => {

@@ -4,6 +4,7 @@
 }
 
 .payments-intro,
+.payment-page-actions,
 .payment-panel__header,
 .payment-modal__header,
 .payment-modal__footer,
@@ -19,6 +20,26 @@
 
 .payments-intro {
   align-items: flex-start;
+}
+
+.payment-page-actions {
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.payment-registration-action {
+  position: relative;
+  display: grid;
+  justify-items: end;
+  gap: 0.3rem;
+}
+
+.payment-registration-action small {
+  max-width: 290px;
+  color: var(--color-text-muted);
+  font-size: 0.6rem;
+  line-height: 1.35;
+  text-align: right;
 }
 
 .payments-intro > div > span {
@@ -53,6 +74,7 @@
 }
 
 .payment-primary-action,
+.payment-page-actions > button,
 .payment-panel button,
 .traveler-plan button,
 .installment-panel button,
@@ -567,11 +589,26 @@
   }
 
   .payments-intro,
+  .payment-page-actions,
   .payment-panel__header,
   .installment-panel > header,
   .payment-filters {
     align-items: stretch;
     flex-direction: column;
+  }
+
+  .payment-registration-action,
+  .payment-registration-action .payment-primary-action {
+    width: 100%;
+  }
+
+  .payment-registration-action {
+    justify-items: stretch;
+  }
+
+  .payment-registration-action small {
+    max-width: none;
+    text-align: left;
   }
 
   .payment-filters input,
