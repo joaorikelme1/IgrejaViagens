@@ -1,0 +1,596 @@
+.payments-page {
+  display: grid;
+  gap: 1rem;
+}
+
+.payments-intro,
+.payment-panel__header,
+.payment-modal__header,
+.payment-modal__footer,
+.payment-row-actions,
+.receipt-card header,
+.receipt-actions,
+.installment-panel > header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.payments-intro {
+  align-items: flex-start;
+}
+
+.payments-intro > div > span {
+  color: var(--color-text-muted);
+  font-size: 0.64rem;
+  font-weight: 800;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+}
+
+.payments-intro h2,
+.payment-panel h3,
+.traveler-plan h3,
+.installment-panel h3,
+.payment-modal h2 {
+  margin: 0;
+  color: var(--color-text);
+}
+
+.payments-intro h2 {
+  margin-top: 0.18rem;
+  font-size: 1.28rem;
+}
+
+.payments-intro p,
+.payment-modal__header p,
+.traveler-plan header p,
+.installment-panel header p {
+  margin: 0.2rem 0 0;
+  color: var(--color-text-muted);
+  font-size: 0.7rem;
+}
+
+.payment-primary-action,
+.payment-panel button,
+.traveler-plan button,
+.installment-panel button,
+.receipt-actions button,
+.receipt-reject-form button,
+.payment-modal__footer button {
+  padding: 0.55rem 0.72rem;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  background: #fff;
+  color: var(--color-text);
+  cursor: pointer;
+  font-size: 0.68rem;
+  font-weight: 750;
+}
+
+.payment-primary-action,
+.traveler-plan button,
+.payment-modal__footer button.is-primary {
+  border-color: var(--color-brand);
+  background: var(--color-brand);
+  color: #fff;
+}
+
+.payment-primary-action:disabled,
+.payment-modal button:disabled,
+.payment-panel button:disabled,
+.traveler-plan button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.payment-info-banner {
+  padding: 0.78rem 0.9rem;
+  border: 1px solid #b9d7ef;
+  border-radius: 9px;
+  background: #eef8ff;
+  color: #285474;
+  font-size: 0.7rem;
+  line-height: 1.55;
+}
+
+.financial-summary {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  overflow: hidden;
+  border: 1px solid var(--color-border);
+  border-radius: 13px;
+  background: #fff;
+}
+
+.financial-summary article {
+  padding: 0.9rem 1rem;
+  border-right: 1px solid var(--color-border);
+}
+
+.financial-summary article:last-of-type {
+  border-right: 0;
+}
+
+.financial-summary article span,
+.traveler-plan-summary span {
+  display: block;
+  color: var(--color-text-muted);
+  font-size: 0.6rem;
+  font-weight: 750;
+  text-transform: uppercase;
+}
+
+.financial-summary article strong,
+.traveler-plan-summary strong {
+  display: block;
+  margin-top: 0.22rem;
+  color: var(--color-text);
+  font-size: 0.9rem;
+}
+
+.financial-summary__progress {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  padding: 0.75rem 1rem 0.25rem;
+}
+
+.financial-summary__progress > span {
+  height: 7px;
+  flex: 1;
+  overflow: hidden;
+  border-radius: 999px;
+  background: var(--color-background);
+}
+
+.financial-summary__progress i {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #00a86b, #52c997);
+}
+
+.financial-summary__progress strong,
+.financial-summary > p {
+  color: var(--color-text-muted);
+  font-size: 0.64rem;
+}
+
+.financial-summary > p {
+  grid-column: 1 / -1;
+  margin: 0;
+  padding: 0.25rem 1rem 0.75rem;
+}
+
+.payment-panel,
+.traveler-plan,
+.traveler-plan-summary,
+.installment-panel {
+  overflow: hidden;
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: 0 5px 20px rgb(27 31 85 / 4%);
+}
+
+.payment-panel__header,
+.installment-panel > header {
+  padding: 0.9rem 1rem;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.payment-panel h3,
+.traveler-plan h3,
+.installment-panel h3 {
+  font-size: 0.84rem;
+}
+
+.payment-panel__header small {
+  color: var(--color-text-muted);
+  font-size: 0.62rem;
+}
+
+.payment-filters {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.payment-filters label,
+.payment-field,
+.traveler-plan form label,
+.receipt-reject-form label {
+  display: grid;
+  gap: 0.28rem;
+  color: var(--color-text-muted);
+  font-size: 0.62rem;
+  font-weight: 750;
+}
+
+.payment-filters input,
+.payment-filters select,
+.payment-field input,
+.payment-field select,
+.traveler-plan input,
+.traveler-plan select,
+.receipt-reject-form textarea {
+  min-width: 150px;
+  padding: 0.55rem 0.62rem;
+  border: 1px solid var(--color-border);
+  border-radius: 7px;
+  background: #fff;
+  color: var(--color-text);
+  font: inherit;
+}
+
+.payment-table-wrap {
+  overflow-x: auto;
+}
+
+.payment-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.payment-table th,
+.payment-table td {
+  padding: 0.75rem 0.85rem;
+  border-bottom: 1px solid var(--color-border);
+  color: var(--color-text);
+  font-size: 0.68rem;
+  line-height: 1.45;
+  text-align: left;
+  vertical-align: middle;
+}
+
+.payment-table th {
+  background: var(--color-background);
+  color: var(--color-text-muted);
+  font-size: 0.59rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.payment-table td > strong,
+.payment-table td > small {
+  display: block;
+}
+
+.payment-table td > small {
+  color: var(--color-text-muted);
+  font-size: 0.61rem;
+}
+
+.payment-warning {
+  color: #a26900 !important;
+}
+
+.payment-row-actions,
+.receipt-actions {
+  justify-content: flex-start;
+  flex-wrap: wrap;
+}
+
+.payment-row-actions button.is-danger,
+.payment-modal__footer button.is-danger {
+  border-color: #b42b3b;
+  background: #b42b3b;
+  color: #fff;
+}
+
+.payment-badge,
+.receipt-status {
+  display: inline-flex;
+  padding: 0.27rem 0.48rem;
+  border-radius: 999px;
+  background: #fff1d8;
+  color: #7d5305;
+  font-size: 0.61rem;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.payment-badge.is-complete,
+.receipt-status.is-approved {
+  background: #dcf6e8;
+  color: #116a41;
+}
+
+.payment-badge.is-unconfigured,
+.receipt-status.is-none {
+  background: #eff1f5;
+  color: var(--color-text-muted);
+}
+
+.payment-badge.is-partial {
+  background: #e8edff;
+  color: var(--color-brand);
+}
+
+.receipt-status.is-rejected {
+  background: #ffeaed;
+  color: #a22736;
+}
+
+.payment-empty,
+.payment-page-status {
+  padding: 2rem;
+  color: var(--color-text-muted);
+  font-size: 0.72rem;
+  text-align: center;
+}
+
+.payment-overlay {
+  position: fixed;
+  z-index: 1250;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  background: rgb(11 31 58 / 64%);
+  backdrop-filter: blur(6px);
+}
+
+.payment-modal {
+  width: min(100%, 650px);
+  max-height: 94vh;
+  overflow: auto;
+  border-radius: 15px;
+  background: #fff;
+  box-shadow: 0 24px 80px rgb(27 31 85 / 28%);
+}
+
+.payment-modal__header,
+.payment-modal__footer {
+  padding: 1rem 1.15rem;
+}
+
+.payment-modal__header {
+  border-bottom: 1px solid var(--color-border);
+}
+
+.payment-modal__header > button {
+  display: grid;
+  width: 32px;
+  height: 32px;
+  border: 0;
+  border-radius: 7px;
+  background: var(--color-background);
+  cursor: pointer;
+  place-items: center;
+}
+
+.payment-modal h2 {
+  font-size: 0.98rem;
+}
+
+.payment-modal__body {
+  display: grid;
+  gap: 0.9rem;
+  padding: 1.15rem;
+}
+
+.payment-modal__footer {
+  justify-content: flex-end;
+  border-top: 1px solid var(--color-border);
+}
+
+.payment-form-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.payment-field--wide {
+  grid-column: 1 / -1;
+}
+
+.payment-check-field {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  color: var(--color-text);
+  font-size: 0.68rem;
+  font-weight: 700;
+}
+
+.delete-payment-modal,
+.confirm-plan-modal {
+  width: min(100%, 460px);
+}
+
+.delete-payment-modal p,
+.confirm-plan-modal p {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: 0.72rem;
+  line-height: 1.6;
+}
+
+.receipt-viewer {
+  width: min(100%, 820px);
+}
+
+.receipt-card {
+  display: grid;
+  gap: 0.7rem;
+  padding: 0.85rem;
+  border: 1px solid var(--color-border);
+  border-radius: 9px;
+}
+
+.receipt-card header strong,
+.receipt-card header span,
+.receipt-card header div span {
+  display: block;
+}
+
+.receipt-card header div span,
+.receipt-note,
+.receipt-missing {
+  color: var(--color-text-muted);
+  font-size: 0.64rem;
+}
+
+.receipt-card img,
+.receipt-card object {
+  width: 100%;
+  max-height: 420px;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  object-fit: contain;
+}
+
+.receipt-card object {
+  height: 420px;
+}
+
+.receipt-card > a {
+  color: var(--color-brand);
+  font-size: 0.68rem;
+  font-weight: 700;
+}
+
+.receipt-reject-form {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.receipt-reject-form textarea {
+  min-height: 70px;
+  resize: vertical;
+}
+
+.traveler-plan {
+  padding: 1rem;
+}
+
+.traveler-plan form {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) auto;
+  align-items: end;
+  gap: 0.7rem;
+  margin-top: 0.9rem;
+}
+
+.traveler-plan form > div span,
+.traveler-plan form > div strong {
+  display: block;
+}
+
+.traveler-plan form > div span {
+  color: var(--color-text-muted);
+  font-size: 0.6rem;
+}
+
+.traveler-plan form > div strong {
+  margin-top: 0.25rem;
+  font-size: 0.8rem;
+}
+
+.traveler-plan-summary {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.8rem;
+  padding: 1rem;
+}
+
+.traveler-plan-summary > p {
+  grid-column: 1 / -1;
+  margin: 0;
+}
+
+.installment-list {
+  display: grid;
+}
+
+.installment-list article {
+  display: grid;
+  grid-template-columns: auto minmax(160px, 1fr) auto auto;
+  align-items: center;
+  gap: 0.8rem;
+  padding: 0.8rem 1rem;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.installment-list article > span:first-child {
+  display: grid;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--color-background);
+  font-size: 0.65rem;
+  font-weight: 800;
+  place-items: center;
+}
+
+.installment-list strong,
+.installment-list small {
+  display: block;
+}
+
+.installment-list strong {
+  font-size: 0.71rem;
+}
+
+.installment-list small {
+  color: var(--color-text-muted);
+  font-size: 0.62rem;
+}
+
+.receipt-upload-button {
+  padding: 0.48rem 0.62rem;
+  border: 1px solid var(--color-brand);
+  border-radius: 7px;
+  color: var(--color-brand);
+  cursor: pointer;
+  font-size: 0.65rem;
+  font-weight: 750;
+}
+
+.receipt-upload-button input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+}
+
+@media (max-width: 760px) {
+  .financial-summary {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .financial-summary article:nth-child(2) {
+    border-right: 0;
+  }
+
+  .payments-intro,
+  .payment-panel__header,
+  .installment-panel > header,
+  .payment-filters {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .payment-filters input,
+  .payment-filters select {
+    width: 100%;
+  }
+
+  .traveler-plan form,
+  .traveler-plan-summary,
+  .payment-form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .payment-field--wide,
+  .traveler-plan-summary > p {
+    grid-column: auto;
+  }
+
+  .installment-list article {
+    grid-template-columns: auto 1fr;
+  }
+}

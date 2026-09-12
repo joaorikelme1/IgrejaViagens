@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Hotel — Igreja Viagens</title>
+<link rel="stylesheet" href="css/style.css">
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar">
+    <div class="sb-head">
+      <div class="sb-logo"><img src="imagens/logo.png" alt="Logo"></div>
+      <div class="sb-brand"><div class="name">Igreja Viagens</div><div class="role" id="sb-sub">Painel Admin</div></div>
+    </div>
+    <nav class="sb-nav" id="sb-nav"></nav>
+    <div class="sb-foot">
+      <div class="sb-avatar" id="sb-ava">A</div>
+      <div class="sb-uinfo"><div class="uname" id="sb-name">—</div><div class="urole" id="sb-role">—</div></div>
+      <button class="sb-out" onclick="logout()" title="Sair"><i data-lucide="power" class="lucide-icon"></i></button>
+    </div>
+  </aside>
+
+  <div class="main">
+    <header class="topbar">
+      <div class="tb-left">
+        <button class="menu-tog" id="menu-tog"><i data-lucide="menu" class="lucide-icon"></i></button>
+        <div><div class="pg-title">Hotel</div><div class="pg-crumb" id="pg-trip-name"></div></div>
+      </div>
+    </header>
+    <div class="page">
+      <div class="g21" style="gap:1.5rem;align-items:flex-start">
+        <!-- Left: room grid -->
+        <div>
+          <div class="sec-head mb3">
+            <h2><i data-lucide="building-2" class="lucide-icon"></i> Quartos</h2>
+          </div>
+          <div id="hotel-container"></div>
+        </div>
+
+        <!-- Right: add hotel / summary -->
+        <div>
+          <div class="card mb3">
+            <div class="card-head"><div class="card-title"><i data-lucide="building-2" class="lucide-icon"></i> Adicionar Hotel</div></div>
+            <div class="card-body">
+              <form id="add-hotel-form" novalidate>
+                <div class="form-group dark-label">
+                  <label>Nome do Hotel</label>
+                  <div class="inp-wrap"><span class="inp-icon dark"><i data-lucide="building-2" class="lucide-icon"></i></span>
+                    <input type="text" id="hotel-name-inp" class="form-control light" placeholder="Ex: Hotel Central">
+                  </div>
+                </div>
+                <button type="submit" class="btn btn-red btn-full"><i data-lucide="plus" class="lucide-icon"></i> Adicionar</button>
+              </form>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-head"><div class="card-title"><i data-lucide="info" class="lucide-icon"></i> Como funciona</div></div>
+            <div class="card-body">
+              <div class="alert al-sky">
+                <span class="al-ico"><i data-lucide="info" class="lucide-icon"></i></span>
+                <span style="font-size:.82rem;line-height:1.7">
+                  1. Adicione um hotel<br>
+                  2. Clique em <strong>+ Quarto</strong> para criar quartos<br>
+                  3. Clique em <strong><i data-lucide="user" class="lucide-icon"></i> Atribuir</strong> para designar viajantes<br>
+                  4. As informações aparecem automaticamente no dashboard do viajante
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<script src="js/script.js"></script>
+
+<script>document.addEventListener("DOMContentLoaded", function(){ if(window.lucide) lucide.createIcons(); });</script>
+</body>
+</html>

@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Cadastro Global — Igreja Viagens</title>
+<link rel="stylesheet" href="css/style.css">
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar">
+    <div class="sb-head">
+      <div class="sb-logo"><img src="imagens/logo.png" alt="Logo"></div>
+      <div class="sb-brand"><div class="name">Igreja Viagens</div><div class="role" id="sb-sub">Painel Admin</div></div>
+    </div>
+    <nav class="sb-nav" id="sb-nav"></nav>
+    <div class="sb-foot">
+      <div class="sb-avatar" id="sb-ava">A</div>
+      <div class="sb-uinfo"><div class="uname" id="sb-name">—</div><div class="urole" id="sb-role">—</div></div>
+      <button class="sb-out" onclick="logout()" title="Sair"><i data-lucide="power" class="lucide-icon"></i></button>
+    </div>
+  </aside>
+
+  <div class="main">
+    <header class="topbar">
+      <div class="tb-left">
+        <button class="menu-tog" id="menu-tog"><i data-lucide="menu" class="lucide-icon"></i></button>
+        <div>
+          <div class="pg-title">Cadastro Global</div>
+          <div class="pg-crumb">Todos os usuários do sistema</div>
+        </div>
+      </div>
+      <div class="tb-right">
+        <button class="btn btn-red" id="add-user-btn"><i data-lucide="plus" class="lucide-icon"></i> Novo Usuário</button>
+      </div>
+    </header>
+
+    <div class="content page">
+      <!-- Info banner -->
+      <div class="alert al-sky mb3" style="max-width:860px">
+        <span class="al-ico"><i data-lucide="info" class="lucide-icon"></i></span>
+        <span>Aqui você gerencia <strong>todos os usuários do sistema</strong>, independente de viagem.
+        Para adicionar um viajante a uma viagem específica, acesse a página <a href="viajantes.html" style="color:var(--sky);font-weight:600">Viajantes da Viagem</a>.</span>
+      </div>
+
+      <div class="card" style="max-width:900px">
+        <div class="card-head">
+          <div>
+            <div class="card-title"><i data-lucide="users" class="lucide-icon"></i> Usuários Cadastrados</div>
+            <div class="card-sub">Viajantes e administradores do sistema</div>
+          </div>
+          <div style="display:flex;gap:.75rem;align-items:center">
+            <div class="inp-wrap" style="min-width:220px">
+              <span class="inp-icon"><i data-lucide="search" class="lucide-icon"></i></span>
+              <input type="text" id="search-users" class="form-control" placeholder="Buscar por nome ou CPF…"
+                style="padding-left:2.4rem">
+            </div>
+          </div>
+        </div>
+        <div class="card-body" style="padding:0;overflow-x:auto">
+          <table class="data-table" style="width:100%;border-collapse:collapse">
+            <thead>
+              <tr>
+                <th style="padding:.75rem 1rem;text-align:left;font-size:.72rem;font-weight:700;color:var(--text-3);text-transform:uppercase;letter-spacing:.07em;border-bottom:1.5px solid var(--border);background:var(--surface-2)">Nome</th>
+                <th style="padding:.75rem 1rem;text-align:left;font-size:.72rem;font-weight:700;color:var(--text-3);text-transform:uppercase;letter-spacing:.07em;border-bottom:1.5px solid var(--border);background:var(--surface-2)">CPF</th>
+                <th style="padding:.75rem 1rem;text-align:left;font-size:.72rem;font-weight:700;color:var(--text-3);text-transform:uppercase;letter-spacing:.07em;border-bottom:1.5px solid var(--border);background:var(--surface-2)">Papel</th>
+                <th style="padding:.75rem 1rem;text-align:left;font-size:.72rem;font-weight:700;color:var(--text-3);text-transform:uppercase;letter-spacing:.07em;border-bottom:1.5px solid var(--border);background:var(--surface-2)">Status</th>
+                <th style="padding:.75rem 1rem;text-align:left;font-size:.72rem;font-weight:700;color:var(--text-3);text-transform:uppercase;letter-spacing:.07em;border-bottom:1.5px solid var(--border);background:var(--surface-2)">Viagens</th>
+                <th style="padding:.75rem 1rem;text-align:left;font-size:.72rem;font-weight:700;color:var(--text-3);text-transform:uppercase;letter-spacing:.07em;border-bottom:1.5px solid var(--border);background:var(--surface-2)">Ações</th>
+              </tr>
+            </thead>
+            <tbody id="users-tbody">
+              <tr><td colspan="6" class="tc tm" style="padding:3rem">Carregando...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div><!-- /content -->
+  </div><!-- /main -->
+</div><!-- /app -->
+
+<!-- Global user edit modal (rendered by script.js openNewGlobalUser) -->
+
+<script src="js/script.js"></script>
+
+<script>document.addEventListener("DOMContentLoaded", function(){ if(window.lucide) lucide.createIcons(); });</script>
+</body>
+</html>

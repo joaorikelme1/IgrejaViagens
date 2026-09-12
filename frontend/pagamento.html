@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Pagamentos — Igreja Viagens</title>
+<link rel="stylesheet" href="css/style.css">
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar">
+    <div class="sb-head">
+      <div class="sb-logo"><img src="imagens/logo.png" alt="Logo"></div>
+      <div class="sb-brand"><div class="name">Igreja Viagens</div><div class="role" id="sb-sub">—</div></div>
+    </div>
+    <nav class="sb-nav" id="sb-nav"></nav>
+    <div class="sb-foot">
+      <div class="sb-avatar" id="sb-ava">A</div>
+      <div class="sb-uinfo"><div class="uname" id="sb-name">—</div><div class="urole" id="sb-role">—</div></div>
+      <button class="sb-out" onclick="logout()" title="Sair"><i data-lucide="power" class="lucide-icon"></i></button>
+    </div>
+  </aside>
+
+  <div class="main">
+    <header class="topbar">
+      <div class="tb-left">
+        <button class="menu-tog" id="menu-tog"><i data-lucide="menu" class="lucide-icon"></i></button>
+        <div><div class="pg-title">Pagamentos</div><div class="pg-crumb" id="pg-trip-name"></div></div>
+      </div>
+    </header>
+
+    <div class="page">
+
+      <!-- ADMIN VIEW -->
+      <div id="admin-pay" class="gone">
+        <h2 class="mb2"><i data-lucide="credit-card" class="lucide-icon"></i> Pagamentos dos Viajantes</h2>
+
+        <!-- Arrecadação -->
+        <div class="arrec-card mb3">
+          <div class="arrec-val">
+            <div class="lbl">Total Arrecadado</div>
+            <div class="num" id="arrecadado">R$ 0,00</div>
+          </div>
+          <div class="arrec-val">
+            <div class="lbl">Meta Total</div>
+            <div class="num" id="meta-total">R$ 0,00</div>
+          </div>
+          <div class="arrec-val" style="text-align:right">
+            <div class="lbl">Progresso</div>
+            <div class="num" id="pct-meta">0%</div>
+          </div>
+          <div style="grid-column:1/-1">
+            <div style="font-size:.72rem;color:rgba(255,255,255,.45);font-weight:600;margin-bottom:.4rem">Barra de Arrecadação</div>
+            <div class="arrec-pbar"><div class="arrec-pbar-fill" id="meta-bar" style="width:0%"></div></div>
+            <div class="arrec-pct" id="arrec-label"></div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="tbl-wrap">
+            <table>
+              <thead>
+                <tr><th>Viajante</th><th>Valor Total</th><th>Parcelamento</th><th>Progresso</th><th>Comprov.</th><th></th></tr>
+              </thead>
+              <tbody id="adm-pay-tbody">
+                <tr><td colspan="6" class="tc tm" style="padding:2rem">Carregando...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- TRAVELER VIEW -->
+      <div id="trav-pay" class="gone">
+        <h2 class="mb2"><i data-lucide="credit-card" class="lucide-icon"></i> Meu Pagamento</h2>
+
+        <!-- Summary card -->
+        <div class="card mb3">
+          <div class="card-body">
+            <div class="g3" style="gap:1.25rem;margin-bottom:1.25rem">
+              <div style="text-align:center;padding:1rem;background:var(--surface-2);border-radius:var(--r);border:1px solid var(--border)">
+                <div style="font-size:.72rem;color:var(--text-3);text-transform:uppercase;letter-spacing:.08em;font-weight:600">Valor Total</div>
+                <div style="font-size:1.6rem;font-weight:800;color:var(--text);margin-top:.35rem" id="tv-total">—</div>
+              </div>
+              <div style="text-align:center;padding:1rem;background:var(--surface-2);border-radius:var(--r);border:1px solid var(--border)">
+                <div style="font-size:.72rem;color:var(--text-3);text-transform:uppercase;letter-spacing:.08em;font-weight:600">Parcelas</div>
+                <div style="font-size:1.6rem;font-weight:800;color:var(--text);margin-top:.35rem" id="tv-count">—</div>
+              </div>
+              <div style="text-align:center;padding:1rem;background:var(--surface-2);border-radius:var(--r);border:1px solid var(--border)">
+                <div style="font-size:.72rem;color:var(--text-3);text-transform:uppercase;letter-spacing:.08em;font-weight:600">Valor por Parcela</div>
+                <div style="font-size:1.6rem;font-weight:800;color:var(--text);margin-top:.35rem" id="tv-each">—</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Config (before locking) -->
+        <div id="parc-config" class="card mb3">
+          <div class="card-head"><div class="card-title"><i data-lucide="settings" class="lucide-icon"></i> Configurar Parcelamento</div></div>
+          <div class="card-body">
+            <div class="alert al-gold mb2"><span class="al-ico"><i data-lucide="alert-triangle" class="lucide-icon"></i></span><span>Após confirmar, o número de parcelas e o dia de vencimento <strong>não poderão mais ser alterados</strong>.</span></div>
+            <div class="g2" style="gap:1rem;margin-bottom:1.25rem">
+              <div class="form-group dark-label">
+                <label>Número de Parcelas</label>
+                <select id="parc-sel" class="form-control light no-icon">
+                  <option value="1">1x (à vista)</option>
+                  <option value="2">2x</option>
+                  <option value="3">3x</option>
+                  <option value="4">4x</option>
+                  <option value="5">5x</option>
+                  <option value="6">6x</option>
+                  <option value="7">7x</option>
+                  <option value="8">8x</option>
+                  <option value="9">9x</option>
+                  <option value="10">10x</option>
+                  <option value="11">11x</option>
+                  <option value="12">12x</option>
+                </select>
+              </div>
+              <div class="form-group dark-label">
+                <label>Dia de Vencimento</label>
+                <select id="due-day-sel" class="form-control light no-icon">
+                  <option value="5">Dia 5</option>
+                  <option value="10" selected>Dia 10</option>
+                  <option value="15">Dia 15</option>
+                  <option value="20">Dia 20</option>
+                  <option value="25">Dia 25</option>
+                </select>
+              </div>
+            </div>
+            <div id="parc-preview" style="display:flex;flex-direction:column;gap:.4rem;margin-bottom:1.25rem"></div>
+            <button class="btn btn-red" onclick="lockInstallments()"><i data-lucide="check-circle" class="lucide-icon"></i> Confirmar Parcelamento</button>
+          </div>
+        </div>
+
+        <!-- Locked info -->
+        <div id="parc-locked-info" class="gone card mb3">
+          <div class="card-body">
+            <div class="alert al-green"><span class="al-ico"><i data-lucide="check-circle" class="lucide-icon"></i></span>
+              <span>Parcelamento confirmado: <strong id="locked-count">—</strong>, vencimento no <strong id="locked-day">—</strong>. Valor por parcela: <strong id="locked-each">—</strong></span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Parcels list -->
+        <div id="parc-section" class="gone card">
+          <div class="card-head"><div class="card-title"><i data-lucide="clipboard-list" class="lucide-icon"></i> Minhas Parcelas</div></div>
+          <div class="card-body">
+            <div class="parcel-list" id="parc-list"></div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- Detail Modal (admin) -->
+<div class="overlay" id="detail-modal">
+  <div class="modal" style="max-width:640px">
+    <div class="modal-head">
+      <span class="modal-title"><i data-lucide="user" class="lucide-icon"></i> Detalhes do Viajante</span>
+      <button class="modal-x" onclick="closeM('detail-modal')"><i data-lucide="x" class="lucide-icon"></i></button>
+    </div>
+    <div class="modal-body" id="detail-content"></div>
+    <div class="modal-foot"><button class="btn btn-outline" onclick="closeM('detail-modal')">Fechar</button></div>
+  </div>
+</div>
+
+<!-- Upload Modal -->
+<div class="overlay" id="upload-modal">
+  <div class="modal" style="max-width:440px">
+    <div class="modal-head">
+      <span class="modal-title"><i data-lucide="paperclip" class="lucide-icon"></i> Enviar Comprovante — Parcela <span id="up-num">1</span></span>
+      <button class="modal-x" onclick="closeM('upload-modal')"><i data-lucide="x" class="lucide-icon"></i></button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="up-parc" value="1">
+      <label class="upload" onclick="document.getElementById('rcpt-file').click()">
+        <div class="upload-ico"><i data-lucide="file-text" class="lucide-icon"></i></div>
+        <p class="fw6">Clique para selecionar o arquivo</p>
+        <p class="tm mt1">PNG, JPG ou PDF — máximo 4MB</p>
+      </label>
+      <input type="file" id="rcpt-file" accept="image/*,.pdf" style="display:none" onchange="const p=this.parentElement.querySelector('.fw6');if(p&&this.files[0])p.textContent=this.files[0].name">
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-outline" onclick="closeM('upload-modal')">Cancelar</button>
+      <button class="btn btn-red" onclick="submitReceipt()"><i data-lucide="upload" class="lucide-icon"></i> Enviar Comprovante</button>
+    </div>
+  </div>
+</div>
+
+<script src="js/script.js"></script>
+
+<script>document.addEventListener("DOMContentLoaded", function(){ if(window.lucide) lucide.createIcons(); });</script>
+</body>
+</html>

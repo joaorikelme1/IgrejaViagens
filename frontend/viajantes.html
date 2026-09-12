@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Viajantes — Igreja Viagens</title>
+<link rel="stylesheet" href="css/style.css">
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar">
+    <div class="sb-head">
+      <div class="sb-logo"><img src="imagens/logo.png" alt="Logo"></div>
+      <div class="sb-brand"><div class="name">Igreja Viagens</div><div class="role" id="sb-sub">Painel Admin</div></div>
+    </div>
+    <nav class="sb-nav" id="sb-nav"></nav>
+    <div class="sb-foot">
+      <div class="sb-avatar" id="sb-ava">A</div>
+      <div class="sb-uinfo"><div class="uname" id="sb-name">—</div><div class="urole" id="sb-role">—</div></div>
+      <button class="sb-out" onclick="logout()" title="Sair"><i data-lucide="power" class="lucide-icon"></i></button>
+    </div>
+  </aside>
+
+  <div class="main">
+    <header class="topbar">
+      <div class="tb-left">
+        <button class="menu-tog" id="menu-tog"><i data-lucide="menu" class="lucide-icon"></i></button>
+        <div><div class="pg-title">Viajantes</div><div class="pg-crumb" id="pg-trip-name"></div></div>
+      </div>
+      <div class="tb-right">
+        <button class="btn btn-red btn-sm" id="add-btn"><i data-lucide="plus" class="lucide-icon"></i> Adicionar à Viagem</button>
+      </div>
+    </header>
+
+    <div class="page">
+      <div class="sec-head">
+        <h2><i data-lucide="users" class="lucide-icon"></i> Viajantes da Viagem</h2>
+        <div class="inp-wrap" style="width:280px">
+          <span class="inp-icon dark"><i data-lucide="search" class="lucide-icon"></i></span>
+          <input type="text" id="search-trav" class="form-control light" placeholder="Buscar por nome ou CPF" oninput="searchTrav()">
+        </div>
+      </div>
+      <div class="alert al-sky mb2" style="font-size:.82rem">
+        <span class="al-ico"><i data-lucide="info" class="lucide-icon"></i></span>
+        <span>Use <strong><i data-lucide="plus" class="lucide-icon"></i> Adicionar à Viagem</strong> para incluir viajantes já cadastrados no sistema nesta viagem.
+        Para cadastrar um usuário novo, acesse <a href="cadastros.html" style="color:var(--sky);font-weight:600"><i data-lucide="folder-open" class="lucide-icon"></i> Cadastro Global</a>.</span>
+      </div>
+
+      <div class="card">
+        <div class="tbl-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Viajante</th>
+                <th>Nascimento</th>
+                <th>Cônjuge</th>
+                <th>Filhos</th>
+                <th>Pgto</th>
+                <th>Comprov.</th>
+                <th>Ações</th>
+              </tr>
+            </thead>
+            <tbody id="trav-tbody">
+              <tr><td colspan="7" class="tc tm" style="padding:2rem">Carregando...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Add / Edit Traveler Modal -->
+<div class="overlay" id="add-modal">
+  <div class="modal" style="max-width:580px">
+    <div class="modal-head">
+      <span class="modal-title" id="modal-trav-title"><i data-lucide="plus" class="lucide-icon"></i> Cadastrar Viajante</span>
+      <button class="modal-x" onclick="closeM('add-modal')"><i data-lucide="x" class="lucide-icon"></i></button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="trav-edit-cpf" value="">
+      <input type="hidden" id="add-modal-trip" value="">
+      <form id="add-form" novalidate>
+        <div class="g2" style="gap:.85rem">
+          <div class="form-group dark-label" style="grid-column:1/-1">
+            <label>Nome Completo *</label>
+            <div class="inp-wrap"><span class="inp-icon dark"><i data-lucide="user" class="lucide-icon"></i></span>
+              <input type="text" id="nt-name" class="form-control light" placeholder="Nome do viajante">
+            </div>
+          </div>
+          <div class="form-group dark-label">
+            <label>CPF *</label>
+            <div class="inp-wrap"><span class="inp-icon dark"><i data-lucide="id-card" class="lucide-icon"></i></span>
+              <input type="text" id="nt-cpf" class="form-control light" placeholder="000.000.000-00" maxlength="14" inputmode="numeric">
+            </div>
+            <span class="field-msg" id="nt-cpf-fb"></span>
+          </div>
+          <div class="form-group dark-label">
+            <label>Data de Nascimento</label>
+            <input type="date" id="nt-birth" class="form-control light no-icon">
+          </div>
+        </div>
+
+        <div style="display:flex;align-items:center;gap:.75rem;padding:.75rem 0;border-top:1px solid var(--border);border-bottom:1px solid var(--border);margin:.75rem 0">
+          <input type="checkbox" id="nt-married" style="width:18px;height:18px;accent-color:var(--red)">
+          <label for="nt-married" style="font-size:.88rem;font-weight:600;color:var(--text);cursor:pointer"><i data-lucide="heart" class="lucide-icon"></i> Casado(a)</label>
+        </div>
+        <div class="form-group dark-label gone" id="spouse-sec">
+          <label>Nome do Cônjuge</label>
+          <div class="inp-wrap"><span class="inp-icon dark"><i data-lucide="users" class="lucide-icon"></i></span>
+            <input type="text" id="nt-spouse" class="form-control light" placeholder="Nome do cônjuge">
+          </div>
+        </div>
+
+        <div style="display:flex;align-items:center;gap:.75rem;padding:.75rem 0;border-bottom:1px solid var(--border);margin-bottom:.75rem">
+          <input type="checkbox" id="nt-kids" style="width:18px;height:18px;accent-color:var(--red)">
+          <label for="nt-kids" style="font-size:.88rem;font-weight:600;color:var(--text);cursor:pointer"><i data-lucide="baby" class="lucide-icon"></i> Tem filhos</label>
+        </div>
+        <div class="gone" id="kids-sec">
+          <div class="form-group dark-label">
+            <label>Quantidade de Filhos</label>
+            <input type="number" id="nt-kids-qty" class="form-control light no-icon" min="1" max="10" value="1" style="max-width:120px">
+          </div>
+          <div id="kids-names"></div>
+        </div>
+
+        <div class="modal-foot" style="padding:0;margin-top:1rem">
+          <button type="button" class="btn btn-outline" onclick="closeM('add-modal')">Cancelar</button>
+          <button type="submit" class="btn btn-red"><i data-lucide="save" class="lucide-icon"></i> Salvar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Detail Modal -->
+<div class="overlay" id="detail-modal">
+  <div class="modal" style="max-width:640px">
+    <div class="modal-head">
+      <span class="modal-title"><i data-lucide="user" class="lucide-icon"></i> Detalhes do Viajante</span>
+      <button class="modal-x" onclick="closeM('detail-modal')"><i data-lucide="x" class="lucide-icon"></i></button>
+    </div>
+    <div class="modal-body" id="detail-content"></div>
+    <div class="modal-foot"><button class="btn btn-outline" onclick="closeM('detail-modal')">Fechar</button></div>
+  </div>
+</div>
+
+<!-- Upload Modal -->
+<div class="overlay" id="upload-modal">
+  <div class="modal" style="max-width:440px">
+    <div class="modal-head">
+      <span class="modal-title"><i data-lucide="paperclip" class="lucide-icon"></i> Comprovante — Parcela <span id="up-num">1</span></span>
+      <button class="modal-x" onclick="closeM('upload-modal')"><i data-lucide="x" class="lucide-icon"></i></button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="up-parc" value="1">
+      <label class="upload" onclick="document.getElementById('rcpt-file').click()">
+        <div class="upload-ico"><i data-lucide="file-text" class="lucide-icon"></i></div>
+        <p class="fw6">Clique para selecionar</p>
+        <p class="tm mt1">PNG, JPG ou PDF — máximo 4MB</p>
+      </label>
+      <input type="file" id="rcpt-file" accept="image/*,.pdf" style="display:none" onchange="const p=this.parentElement.querySelector('.fw6');if(p&&this.files[0])p.textContent=this.files[0].name">
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-outline" onclick="closeM('upload-modal')">Cancelar</button>
+      <button class="btn btn-red" onclick="submitReceipt()"><i data-lucide="upload" class="lucide-icon"></i> Enviar</button>
+    </div>
+  </div>
+</div>
+
+<script src="js/script.js"></script>
+
+<script>document.addEventListener("DOMContentLoaded", function(){ if(window.lucide) lucide.createIcons(); });</script>
+</body>
+</html>

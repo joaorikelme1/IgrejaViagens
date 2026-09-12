@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Configurações — Igreja Viagens</title>
+<link rel="stylesheet" href="css/style.css">
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar">
+    <div class="sb-head">
+      <div class="sb-logo"><img src="imagens/logo.png" alt="Logo"></div>
+      <div class="sb-brand"><div class="name">Igreja Viagens</div><div class="role" id="sb-sub">Painel Admin</div></div>
+    </div>
+    <nav class="sb-nav" id="sb-nav"></nav>
+    <div class="sb-foot">
+      <div class="sb-avatar" id="sb-ava">A</div>
+      <div class="sb-uinfo"><div class="uname" id="sb-name">—</div><div class="urole" id="sb-role">—</div></div>
+      <button class="sb-out" onclick="logout()" title="Sair"><i data-lucide="power" class="lucide-icon"></i></button>
+    </div>
+  </aside>
+
+  <div class="main">
+    <header class="topbar">
+      <div class="tb-left">
+        <button class="menu-tog" id="menu-tog"><i data-lucide="menu" class="lucide-icon"></i></button>
+        <div><div class="pg-title">Configurações</div><div class="pg-crumb" id="pg-trip-name"></div></div>
+      </div>
+    </header>
+    <div class="page">
+      <div class="sec-head mb3">
+        <h2><i data-lucide="settings" class="lucide-icon"></i> Configurações da Viagem</h2>
+      </div>
+
+      <div class="g21" style="gap:1.5rem;align-items:flex-start">
+        <div class="card">
+          <div class="card-head"><div class="card-title"><i data-lucide="pencil" class="lucide-icon"></i> Editar Viagem</div></div>
+          <div class="card-body">
+            <form id="cfg-form" novalidate>
+              <div class="g2" style="gap:.85rem">
+                <div class="form-group dark-label" style="grid-column:1/-1">
+                  <label>Nome da Viagem</label>
+                  <div class="inp-wrap"><span class="inp-icon dark"><i data-lucide="plane" class="lucide-icon"></i></span>
+                    <input type="text" id="cfg-name" class="form-control light" placeholder="Nome da viagem">
+                  </div>
+                </div>
+                <div class="form-group dark-label">
+                  <label>Local de Partida</label>
+                  <div class="inp-wrap"><span class="inp-icon dark"><i data-lucide="map-pin" class="lucide-icon"></i></span>
+                    <input type="text" id="cfg-dep" class="form-control light" placeholder="Origem">
+                  </div>
+                </div>
+                <div class="form-group dark-label">
+                  <label>Destino Final</label>
+                  <div class="inp-wrap"><span class="inp-icon dark"><i data-lucide="flag" class="lucide-icon"></i></span>
+                    <input type="text" id="cfg-dest" class="form-control light" placeholder="Destino">
+                  </div>
+                </div>
+                <div class="form-group dark-label">
+                  <label>Data da Viagem</label>
+                  <input type="date" id="cfg-date" class="form-control light no-icon">
+                </div>
+                <div class="form-group dark-label">
+                  <label>Hora de Partida</label>
+                  <input type="time" id="cfg-time" class="form-control light no-icon">
+                </div>
+                <div class="form-group dark-label">
+                  <label>Valor por Viajante (R$)</label>
+                  <input type="number" id="cfg-price" class="form-control light no-icon" min="0" step="0.01"
+                    oninput="suggestGoal()">
+                </div>
+                <div class="form-group dark-label">
+                  <label>Máximo de Pessoas</label>
+                  <input type="number" id="cfg-max" class="form-control light no-icon" min="1"
+                    oninput="suggestGoal()">
+                </div>
+              </div>
+              <div class="form-group dark-label mt1">
+                <label><i data-lucide="target" class="lucide-icon"></i> Meta de Arrecadação (R$)
+                  <span id="goal-hint" style="font-size:.72rem;color:var(--text-3);font-weight:400;margin-left:.5rem"></span>
+                </label>
+                <div style="display:flex;gap:.5rem;align-items:center">
+                  <input type="number" id="cfg-goal" class="form-control light no-icon" min="0" step="0.01"
+                    style="flex:1" placeholder="Meta total — deixe em branco para calcular automaticamente">
+                  <button type="button" class="btn btn-outline btn-sm" onclick="applyGoalSuggestion()" title="Sugerir automaticamente"><i data-lucide="target" class="lucide-icon"></i> Sugerir</button>
+                </div>
+              </div>
+              <script>
+                function suggestGoal(){
+                  const price=parseFloat(document.getElementById('cfg-price')?.value)||0;
+                  const max=parseInt(document.getElementById('cfg-max')?.value)||0;
+                  const hint=document.getElementById('goal-hint');
+                  if(hint&&price&&max) hint.textContent=`— sugestão: R$ ${(price*max).toLocaleString('pt-BR',{minimumFractionDigits:2})} (${price} × ${max})`;
+                  else if(hint) hint.textContent='';
+                }
+                function applyGoalSuggestion(){
+                  const price=parseFloat(document.getElementById('cfg-price')?.value)||0;
+                  const max=parseInt(document.getElementById('cfg-max')?.value)||0;
+                  if(!price||!max){ alert('Preencha o valor por viajante e o máximo de pessoas primeiro.'); return; }
+                  document.getElementById('cfg-goal').value=(price*max).toFixed(2);
+                }
+              </script>
+              <div class="form-group dark-label mt2">
+                <label>Regras da Viagem</label>
+                <textarea id="cfg-rules" class="form-control light no-icon" rows="8" placeholder="• Regra 1&#10;• Regra 2"></textarea>
+              </div>
+              <div style="display:flex;gap:.75rem;justify-content:flex-end;margin-top:1.25rem">
+                <button type="button" class="btn btn-outline" onclick="loadCfg(S.getTrip())"><i data-lucide="undo-2" class="lucide-icon"></i> Reverter</button>
+                <button type="submit" class="btn btn-red"><i data-lucide="save" class="lucide-icon"></i> Salvar Configurações</button>
+              </div>
+            </form>
+          </div>
+        </div>
+
+        <div>
+          <div class="card mb3">
+            <div class="card-head"><div class="card-title"><i data-lucide="alert-triangle" class="lucide-icon"></i> Zona de Perigo</div></div>
+            <div class="card-body">
+              <p class="tm mb2">Ações irreversíveis para esta viagem.</p>
+              <button class="btn btn-danger btn-full" onclick="if(confirm('Resetar TODOS os dados do sistema?')){resetIV()}"><i data-lucide="trash-2" class="lucide-icon"></i> Resetar Sistema Completo</button>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-head"><div class="card-title"><i data-lucide="lightbulb" class="lucide-icon"></i> Dicas</div></div>
+            <div class="card-body">
+              <div class="alert al-sky">
+                <span class="al-ico"><i data-lucide="info" class="lucide-icon"></i></span>
+                <span style="font-size:.82rem;line-height:1.7">
+                  Para adicionar <strong>ônibus</strong>, edite a viagem pelo seletor de viagem após o login.<br><br>
+                  Para gerenciar <strong>hotéis e quartos</strong>, acesse a aba Hotel.<br><br>
+                  Para atribuir <strong>assentos</strong>, acesse a aba Transporte.
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<script src="js/script.js"></script>
+
+<script>document.addEventListener("DOMContentLoaded", function(){ if(window.lucide) lucide.createIcons(); });</script>
+</body>
+</html>

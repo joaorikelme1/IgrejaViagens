@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Dashboard — Igreja Viagens</title>
+<link rel="stylesheet" href="css/style.css">
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar">
+    <div class="sb-head">
+      <div class="sb-logo"><img src="imagens/logo.png" alt="Logo"></div>
+      <div class="sb-brand"><div class="name">Igreja Viagens</div><div class="role" id="sb-sub">Painel Admin</div></div>
+    </div>
+    <nav class="sb-nav" id="sb-nav"></nav>
+    <div class="sb-foot">
+      <div class="sb-avatar" id="sb-ava">A</div>
+      <div class="sb-uinfo"><div class="uname" id="sb-name">—</div><div class="urole" id="sb-role">—</div></div>
+      <button class="sb-out" onclick="logout()" title="Sair"><i data-lucide="power" class="lucide-icon"></i></button>
+    </div>
+  </aside>
+
+  <div class="main">
+    <header class="topbar">
+      <div class="tb-left">
+        <button class="menu-tog" id="menu-tog"><i data-lucide="menu" class="lucide-icon"></i></button>
+        <div><div class="pg-title">Dashboard</div><div class="pg-crumb" id="pg-trip-name"></div></div>
+      </div>
+      <div class="tb-right">
+        <button class="btn btn-outline btn-sm" onclick="openAdminTripSelector()"><i data-lucide="refresh-cw" class="lucide-icon"></i> Trocar Viagem</button>
+      </div>
+    </header>
+
+    <div class="page">
+      <!-- Banner -->
+      <div class="banner">
+        <div>
+          <h2>Olá, <span id="sb-name-banner">Admin</span> <i data-lucide="hand" class="lucide-icon"></i></h2>
+          <p class="sub">Visão geral da viagem em tempo real</p>
+        </div>
+        <div class="trip-tag">
+          <div class="trip-name" id="dash-trip-dest">—</div>
+          <div class="trip-meta" id="dash-trip-date">—</div>
+        </div>
+      </div>
+
+      <!-- Stats -->
+      <div class="stats-row">
+        <div class="stat s-red">
+          <div class="stat-ic r"><i data-lucide="users" class="lucide-icon"></i></div>
+          <div class="stat-inf"><div class="val" id="stat-travelers">0</div><div class="lbl">Viajantes</div></div>
+        </div>
+        <div class="stat s-navy">
+          <div class="stat-ic n"><i data-lucide="dollar-sign" class="lucide-icon"></i></div>
+          <div class="stat-inf"><div class="val" id="stat-price">—</div><div class="lbl">Valor por Pessoa</div></div>
+        </div>
+        <div class="stat s-green">
+          <div class="stat-ic g"><i data-lucide="bus" class="lucide-icon"></i></div>
+          <div class="stat-inf"><div class="val" id="stat-seats">—</div><div class="lbl">Assentos Ocupados</div></div>
+        </div>
+        <div class="stat s-gold">
+          <div class="stat-ic o"><i data-lucide="hourglass" class="lucide-icon"></i></div>
+          <div class="stat-inf"><div class="val" id="stat-pending">0</div><div class="lbl">Comprovantes Pendentes</div></div>
+        </div>
+      </div>
+
+      <!-- Charts -->
+      <div class="g3 mb3">
+        <div class="card">
+          <div class="card-head"><div class="card-title"><i data-lucide="credit-card" class="lucide-icon"></i> Pagamentos</div></div>
+          <div class="card-body"><div class="chart-area"><canvas id="chart-pay"></canvas></div></div>
+        </div>
+        <div class="card">
+          <div class="card-head"><div class="card-title"><i data-lucide="bus" class="lucide-icon"></i> Ônibus</div></div>
+          <div class="card-body"><div class="chart-area"><canvas id="chart-bus"></canvas></div></div>
+        </div>
+        <div class="card">
+          <div class="card-head"><div class="card-title"><i data-lucide="bar-chart-2" class="lucide-icon"></i> Por Viajante</div></div>
+          <div class="card-body"><div class="chart-area"><canvas id="chart-bars"></canvas></div></div>
+        </div>
+      </div>
+
+      <!-- Recent Table -->
+      <div class="card">
+        <div class="card-head">
+          <div><div class="card-title"><i data-lucide="users" class="lucide-icon"></i> Viajantes Recentes</div></div>
+          <a href="viajantes.html" class="btn btn-outline btn-sm">Ver todos</a>
+        </div>
+        <div class="tbl-wrap">
+          <table>
+            <thead><tr><th>Viajante</th><th>CPF</th><th>Pagamento</th><th>Parcelas</th><th></th></tr></thead>
+            <tbody id="dash-tbody"><tr><td colspan="5" class="tc tm" style="padding:2rem">Nenhum viajante</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Detail Modal -->
+<div class="overlay" id="detail-modal">
+  <div class="modal" style="max-width:640px">
+    <div class="modal-head">
+      <span class="modal-title"><i data-lucide="user" class="lucide-icon"></i> Detalhes do Viajante</span>
+      <button class="modal-x" onclick="closeM('detail-modal')"><i data-lucide="x" class="lucide-icon"></i></button>
+    </div>
+    <div class="modal-body" id="detail-content"></div>
+    <div class="modal-foot"><button class="btn btn-outline" onclick="closeM('detail-modal')">Fechar</button></div>
+  </div>
+</div>
+
+<!-- Upload Modal -->
+<div class="overlay" id="upload-modal">
+  <div class="modal" style="max-width:440px">
+    <div class="modal-head">
+      <span class="modal-title"><i data-lucide="paperclip" class="lucide-icon"></i> Enviar Comprovante — Parcela <span id="up-num">1</span></span>
+      <button class="modal-x" onclick="closeM('upload-modal')"><i data-lucide="x" class="lucide-icon"></i></button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="up-parc" value="1">
+      <label class="upload" onclick="document.getElementById('rcpt-file').click()">
+        <div class="upload-ico"><i data-lucide="file-text" class="lucide-icon"></i></div>
+        <p class="fw6">Clique para selecionar o arquivo</p>
+        <p class="tm mt1">PNG, JPG ou PDF — máximo 4MB</p>
+      </label>
+      <input type="file" id="rcpt-file" accept="image/*,.pdf" style="display:none" onchange="const p=this.parentElement.querySelector('.fw6');if(p&&this.files[0])p.textContent=this.files[0].name">
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-outline" onclick="closeM('upload-modal')">Cancelar</button>
+      <button class="btn btn-red" onclick="submitReceipt()"><i data-lucide="upload" class="lucide-icon"></i> Enviar Comprovante</button>
+    </div>
+  </div>
+</div>
+
+<script src="js/script.js"></script>
+
+<script>document.addEventListener("DOMContentLoaded", function(){ if(window.lucide) lucide.createIcons(); });</script>
+</body>
+</html>

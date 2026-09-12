@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Igreja Viagens — Login</title>
+<link rel="stylesheet" href="css/style.css">
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+</head>
+<body>
+<div class="login-wrap">
+  <div class="login-bg-lines"></div>
+  <div class="login-left">
+    <div class="login-badge"><img src="imagens/logo.png" alt="Logo" class="badge-logo">&nbsp;Sistema de Viagens</div>
+    <h1>Sua <em>jornada</em> começa aqui.</h1>
+    <p>Organize, acompanhe e gerencie viagens da sua comunidade com praticidade e beleza.</p>
+    <div class="login-features">
+      <div class="login-feat"><div class="login-feat-dot"></div>Controle total de pagamentos e parcelas</div>
+      <div class="login-feat"><div class="login-feat-dot"></div>Gestão de assentos e quartos de hotel</div>
+      <div class="login-feat"><div class="login-feat-dot"></div>Passagem digital com download em PDF</div>
+      <div class="login-feat"><div class="login-feat-dot"></div>Dashboard administrativo completo</div>
+    </div>
+  </div>
+
+  <div class="login-right">
+    <div class="login-card">
+      <div class="mark login-mark-logo"><img src="imagens/logo.png" alt="Logo"></div>
+      <h2>Bem-vindo(a)</h2>
+      <p class="sub">Faça login para acessar sua viagem</p>
+
+      <form id="login-form" novalidate>
+        <div class="form-group">
+          <label>CPF</label>
+          <div class="inp-wrap">
+            <span class="inp-icon"><i data-lucide="user" class="lucide-icon"></i></span>
+            <input type="text" id="login-cpf" class="form-control" placeholder="000.000.000-00" maxlength="14" autocomplete="username" inputmode="numeric">
+          </div>
+          <span class="field-msg" id="cpf-fb"></span>
+        </div>
+        <div class="form-group">
+          <label>Senha</label>
+          <div class="inp-wrap">
+            <span class="inp-icon"><i data-lucide="lock" class="lucide-icon"></i></span>
+            <input type="password" id="login-pw" class="form-control" placeholder="••••••••" autocomplete="current-password">
+            <button type="button" class="toggle-pw"><i data-lucide="eye" class="lucide-icon"></i></button>
+          </div>
+        </div>
+        <button type="submit" class="btn btn-red btn-full btn-lg mt2">Entrar <i data-lucide="arrow-right" class="lucide-icon"></i></button>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- First Login Modal -->
+<div class="overlay" id="first-login-modal">
+  <div class="modal">
+    <div class="modal-head">
+      <span class="modal-title"><i data-lucide="key" class="lucide-icon"></i> Crie sua senha</span>
+    </div>
+    <div class="modal-body">
+      <div class="alert al-sky mb2"><span class="al-ico"><i data-lucide="info" class="lucide-icon"></i></span><span>Este é o seu primeiro acesso. Por segurança, crie uma senha pessoal.</span></div>
+      <form id="first-login-form" novalidate>
+        <div class="form-group dark-label">
+          <label>Nova Senha</label>
+          <div class="inp-wrap"><span class="inp-icon dark"><i data-lucide="lock" class="lucide-icon"></i></span>
+            <input type="password" id="new-pw" class="form-control light" placeholder="Mínimo 6 caracteres">
+          </div>
+        </div>
+        <div class="form-group dark-label">
+          <label>Confirmar Senha</label>
+          <div class="inp-wrap"><span class="inp-icon dark"><i data-lucide="lock" class="lucide-icon"></i></span>
+            <input type="password" id="confirm-pw" class="form-control light" placeholder="Repita a senha">
+          </div>
+        </div>
+        <div class="modal-foot" style="padding:0;margin-top:1rem">
+          <button type="submit" class="btn btn-red">Salvar e Entrar <i data-lucide="arrow-right" class="lucide-icon"></i></button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script src="js/script.js"></script>
+
+<script>document.addEventListener("DOMContentLoaded", function(){ if(window.lucide) lucide.createIcons(); });</script>
+</body>
+</html>

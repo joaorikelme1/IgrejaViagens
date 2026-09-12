@@ -1,0 +1,64 @@
+.trip-settings {
+  display: grid;
+  gap: 1rem;
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.trip-settings > header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+}
+
+.trip-settings > header span {
+  color: var(--color-text-muted);
+  font-size: 0.66rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.trip-settings > header h2 {
+  margin: 0.15rem 0;
+  color: var(--color-text);
+  font-size: 1.35rem;
+}
+
+.trip-settings > header p {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: 0.75rem;
+  line-height: 1.6;
+}
+
+.trip-settings__card {
+  padding: 1.25rem;
+  border: 1px solid var(--color-border);
+  border-radius: 13px;
+  background: #fff;
+  box-shadow: 0 5px 20px rgb(27 31 85 / 4%);
+}
+
+.trip-settings > footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.65rem;
+}
+
+.trip-settings > footer button {
+  padding: 0.62rem 0.9rem;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  background: #fff;
+  color: var(--color-text);
+  cursor: pointer;
+  font-size: 0.74rem;
+  font-weight: 700;
+}
+
+.trip-settings > footer .is-primary {
+  border-color: var(--color-brand);
+  background: var(--color-brand);
+  color: #fff;
+}

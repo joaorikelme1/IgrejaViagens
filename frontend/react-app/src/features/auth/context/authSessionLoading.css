@@ -1,0 +1,31 @@
+.auth-session-loading {
+  display: flex;
+  min-height: 100vh;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  background: var(--color-brand-dark);
+  color: #fff;
+  font-family: 'Sora', sans-serif;
+}
+
+.auth-session-loading__spinner {
+  width: 1.25rem;
+  height: 1.25rem;
+  border: 2px solid rgb(255 255 255 / 35%);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: auth-session-spin 0.75s linear infinite;
+}
+
+@keyframes auth-session-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .auth-session-loading__spinner {
+    animation: none;
+  }
+}

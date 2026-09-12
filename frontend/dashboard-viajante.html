@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Minha Viagem — Igreja Viagens</title>
+<link rel="stylesheet" href="css/style.css">
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar">
+    <div class="sb-head">
+      <div class="sb-logo"><img src="imagens/logo.png"></div>
+      <div class="sb-brand"><div class="name">Igreja Viagens</div><div class="role" id="sb-sub">Área do Viajante</div></div>
+    </div>
+    <nav class="sb-nav" id="sb-nav"></nav>
+    <div class="sb-foot">
+      <div class="sb-avatar" id="sb-ava">V</div>
+      <div class="sb-uinfo"><div class="uname" id="sb-name">—</div><div class="urole" id="sb-role">—</div></div>
+      <button class="sb-out" onclick="logout()" title="Sair"><i data-lucide="power" class="lucide-icon"></i></button>
+    </div>
+  </aside>
+
+  <div class="main">
+    <header class="topbar">
+      <div class="tb-left">
+        <button class="menu-tog" id="menu-tog"><i data-lucide="menu" class="lucide-icon"></i></button>
+        <div><div class="pg-title">Minha Passagem</div><div class="pg-crumb" id="tk-tripname">—</div></div>
+      </div>
+      <div class="tb-right">
+        <button class="btn btn-red btn-sm" onclick="downloadTicketPDF()"><i data-lucide="file-text" class="lucide-icon"></i> Baixar PDF</button>
+        <button class="btn btn-outline btn-sm" onclick="S.clearTrip();location.href='index.html'"><i data-lucide="refresh-cw" class="lucide-icon"></i> Trocar Viagem</button>
+      </div>
+    </header>
+
+    <div class="page">
+
+      <!-- Digital Ticket -->
+      <div class="ticket mb3">
+        <div class="ticket-top">
+          <div class="ticket-airline">
+            <div class="ticket-logo"><img src="imagens/logo.png" alt="Logo"></div>
+            <div class="ticket-brand">
+              Igreja Viagens
+              <small id="tk-tripname-brand">Passagem Digital</small>
+            </div>
+            <div style="margin-left:auto">
+              <span id="tk-pay-badge" class="badge b-gold"><i data-lucide="hourglass" class="lucide-icon"></i> Pendente</span>
+            </div>
+          </div>
+          <div class="ticket-route">
+            <div class="ticket-city">
+              <div class="ticket-iata" id="tk-from-iata">—</div>
+              <div class="ticket-city-name" id="tk-from">—</div>
+            </div>
+            <div class="ticket-arrow">
+              <div class="ticket-plane"><i data-lucide="plane" class="lucide-icon"></i></div>
+              <div class="ticket-line"></div>
+              <div class="ticket-date" id="tk-date">—</div>
+            </div>
+            <div class="ticket-city" style="text-align:right">
+              <div class="ticket-iata" id="tk-to-iata">—</div>
+              <div class="ticket-city-name" id="tk-to">—</div>
+            </div>
+          </div>
+        </div>
+
+        <hr class="ticket-divider">
+
+        <div class="ticket-body">
+          <div class="ticket-grid">
+            <div class="ticket-field">
+              <label>Passageiro</label>
+              <p id="tk-name">—</p>
+            </div>
+            <div class="ticket-field">
+              <label>Hora de Partida</label>
+              <p id="tk-time">—</p>
+            </div>
+            <div class="ticket-field">
+              <label>Assento</label>
+              <p id="tk-seat">Não atribuído</p>
+            </div>
+            <div class="ticket-field">
+              <label>Hotel / Quarto</label>
+              <p id="tk-room">Não atribuído</p>
+            </div>
+            <div class="ticket-field">
+              <label>Companheiros de Quarto</label>
+              <p id="tk-roommates">—</p>
+            </div>
+            <div class="ticket-field">
+              <label>Status do Pagamento</label>
+              <p id="tk-pay-text">—</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="ticket-foot">
+          <div>
+            <div style="font-size:.7rem;color:var(--text-3);font-weight:700;text-transform:uppercase;letter-spacing:.08em">Viagem</div>
+            <div style="font-size:.88rem;font-weight:600;color:var(--text);margin-top:.15rem" id="tk-tripname-foot">—</div>
+          </div>
+          <button class="btn btn-red btn-sm" onclick="downloadTicketPDF()"><i data-lucide="file-text" class="lucide-icon"></i> Baixar Passagem</button>
+        </div>
+      </div>
+
+      <!-- Regras -->
+      <div class="card">
+        <div class="card-head"><div class="card-title"><i data-lucide="clipboard-list" class="lucide-icon"></i> Regras da Viagem</div></div>
+        <div class="card-body">
+          <div class="rules">
+            <h3><i data-lucide="pin" class="lucide-icon"></i> Normas e Regulamentos</h3>
+            <p id="trip-rules" style="line-height:2">Carregando...</p>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+<script src="js/script.js"></script>
+<script>
+// Fill IATA-style abbreviations from city names
+document.addEventListener('DOMContentLoaded', ()=>{
+  setTimeout(()=>{
+    const from = document.getElementById('tk-from')?.textContent||'';
+    const to   = document.getElementById('tk-to')?.textContent||'';
+    const abbr = s => s.replace(/[^A-Za-zÀ-ú]/g,' ').trim().split(/\s+/).map(w=>w[0]?.toUpperCase()||'').join('').slice(0,3)||'---';
+    const fi=document.getElementById('tk-from-iata'); if(fi&&from&&from!=='—') fi.textContent=abbr(from);
+    const ti=document.getElementById('tk-to-iata');   if(ti&&to&&to!=='—')   ti.textContent=abbr(to);
+    const tb=document.getElementById('tk-tripname-brand');
+    const tf=document.getElementById('tk-tripname-foot');
+    const tn=document.getElementById('tk-tripname')?.textContent||'';
+    if(tb) tb.textContent=tn; if(tf) tf.textContent=tn;
+    const pp=document.getElementById('tk-pay-badge');
+    const pt=document.getElementById('tk-pay-text');
+    if(pt&&pp) pt.textContent=pp.textContent;
+  }, 300);
+});
+</script>
+
+<script>document.addEventListener("DOMContentLoaded", function(){ if(window.lucide) lucide.createIcons(); });</script>
+</body>
+</html>
