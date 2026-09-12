@@ -1,15 +1,24 @@
+import { maskCpf } from '../../../shared/validation/cpf'
+import type { SystemUser } from '../model/userTypes'
+
 interface ChildrenFieldsProps {
+  availableUsers: SystemUser[]
+  childCpfs: string[]
   disabled: boolean
   hasKids: boolean
   kids: string[]
+  onChildCpfsChange: (cpfs: string[]) => void
   onHasKidsChange: (value: boolean) => void
   onKidsChange: (kids: string[]) => void
 }
 
 export function ChildrenFields({
+  availableUsers,
+  childCpfs,
   disabled,
   hasKids,
   kids,
+  onChildCpfsChange,
   onHasKidsChange,
   onKidsChange,
 }: ChildrenFieldsProps) {
@@ -24,9 +33,7 @@ export function ChildrenFields({
         <input
           checked={hasKids}
           disabled={disabled}
-          onChange={(event) => {
-            onHasKidsChange(event.currentTarget.checked)
-          }}
+          onChange={(event) => onHasKidsChange(event.currentTarget.checked)}
           type="checkbox"
         />
         Tem filhos
@@ -61,6 +68,27 @@ export function ChildrenFields({
               />
             </label>
           ))}
+          <label className="user-field user-field--wide">
+            Vincular filhos que já possuem cadastro
+            <select
+              disabled={disabled}
+              multiple
+              onChange={(event) =>
+                onChildCpfsChange(
+                  Array.from(event.currentTarget.selectedOptions, (option) => option.value),
+                )
+              }
+              size={Math.min(6, Math.max(2, availableUsers.length))}
+              value={childCpfs}
+            >
+              {availableUsers.map((user) => (
+                <option key={user.cpf} value={user.cpf}>
+                  {user.name} · {maskCpf(user.cpf)}
+                </option>
+              ))}
+            </select>
+            <small>Use Ctrl (ou Command) para selecionar mais de um cadastro.</small>
+          </label>
         </div>
       ) : null}
     </fieldset>

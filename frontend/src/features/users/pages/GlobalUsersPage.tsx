@@ -51,10 +51,8 @@ function GlobalUsersContent() {
   const save = async (cpf: string, mutation: UserMutation) => {
     setFeedback(null)
     if (editingUser) {
-      const updated = await updateUser(cpf, mutation)
-      setUsers((current) =>
-        current?.map((user) => (user.cpf === cpf ? updated : user)) ?? null,
-      )
+      await updateUser(cpf, mutation)
+      setUsers(await listUsers())
       setFeedback('Usuário atualizado com sucesso.')
       return
     }
@@ -62,8 +60,8 @@ function GlobalUsersContent() {
     if (users?.some((user) => user.cpf === cpf)) {
       throw new Error('Já existe um usuário cadastrado com este CPF.')
     }
-    const created = await createUser(cpf, mutation)
-    setUsers((current) => (current ? [...current, created] : [created]))
+    await createUser(cpf, mutation)
+    setUsers(await listUsers())
     setFeedback('Usuário cadastrado com sucesso.')
   }
 
@@ -140,7 +138,9 @@ function GlobalUsersContent() {
                     <td><span className="user-badge">{user.role === 'admin' ? 'Administrador' : 'Viajante'}</span></td>
                     <td><span className={`user-badge ${user.firstLogin ? 'is-pending' : 'is-active'}`}>{user.firstLogin ? 'Aguardando' : 'Ativo'}</span></td>
                     <td>
-                      {user.married && user.spouseName ? `Cônjuge informado: ${user.spouseName}` : 'Sem cônjuge informado'}
+                      {user.married && user.spouseName
+                        ? `${user.spouseCpf ? 'Cônjuge vinculado' : 'Cônjuge informado'}: ${user.spouseName}`
+                        : 'Sem cônjuge informado'}
                       {user.hasKids && user.kids.length ? ` · ${user.kids.length} filho(s)` : ''}
                     </td>
                     <td>{associatedTrips.join(', ') || '—'}</td>
@@ -155,6 +155,7 @@ function GlobalUsersContent() {
 
       {editingUser !== undefined ? (
         <UserForm
+          availableUsers={users}
           forceFirstLoginOnCreate
           onClose={() => setEditingUser(undefined)}
           onSubmit={save}

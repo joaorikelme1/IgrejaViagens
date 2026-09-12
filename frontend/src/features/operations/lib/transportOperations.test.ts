@@ -68,7 +68,7 @@ describe('operações de transporte', () => {
       [
         seat,
         { ...seat, id: 'duplicate' },
-        { ...seat, id: 'driver', floor: 1, seatNumber: 1 },
+        { ...seat, id: 'first-passenger', floor: 1, seatNumber: 1 },
         { ...seat, id: 'outside', floor: 3, seatNumber: 50 },
         { ...seat, id: 'missing', busId: '404' },
       ],
@@ -76,7 +76,7 @@ describe('operações de transporte', () => {
     )
 
     expect(conflicts.some((item) => item.key.startsWith('duplicate-seat'))).toBe(true)
-    expect(conflicts.some((item) => item.key === 'driver-seat-driver')).toBe(true)
+    expect(conflicts.some((item) => item.key.startsWith('driver-seat'))).toBe(false)
     expect(conflicts.some((item) => item.key === 'outside-capacity-outside')).toBe(true)
     expect(conflicts.some((item) => item.key === 'missing-bus-missing')).toBe(true)
     expect(conflicts.some((item) => item.key.startsWith('non-member'))).toBe(true)

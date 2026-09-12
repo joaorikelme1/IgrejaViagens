@@ -48,6 +48,7 @@ const trip: Trip = {
 function user(cpf: string, name: string): SystemUser {
   return {
     birthdate: '',
+    childCpfs: [],
     cpf,
     firstLogin: false,
     hasKids: false,
@@ -56,6 +57,7 @@ function user(cpf: string, name: string): SystemUser {
     name,
     role: 'traveler',
     spouseName: '',
+    spouseCpf: '',
   }
 }
 

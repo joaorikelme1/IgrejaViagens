@@ -28,6 +28,7 @@ vi.mock('../api/usersApi', () => ({
 
 const user: SystemUser = {
   birthdate: '',
+  childCpfs: [],
   cpf: '11144477735',
   firstLogin: true,
   hasKids: false,
@@ -36,6 +37,7 @@ const user: SystemUser = {
   name: 'Tiago Viajante',
   role: 'traveler',
   spouseName: '',
+  spouseCpf: '',
 }
 
 describe('GlobalUsersPage', () => {

@@ -43,6 +43,12 @@
   font-size: 0.78rem;
 }
 
+.operation-auto-actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.operation-auto-actions button,
 .operation-primary,
 .hotel-card button,
 .transport-bus-card button,
@@ -64,6 +70,18 @@
   border-color: var(--color-brand);
   background: var(--color-brand);
   color: #fff;
+}
+
+.operation-auto-actions button {
+  background: #eef7f1;
+  border-color: #82aa91;
+  color: #245b38;
+  font-weight: 700;
+}
+
+.operation-auto-actions button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
 }
 
 .is-danger-link {
@@ -153,6 +171,7 @@
 }
 
 .room-card {
+  min-width: 0;
   padding: 0.8rem;
   border: 1px solid var(--color-border);
   border-radius: 10px;
@@ -171,11 +190,17 @@
   gap: 0.5rem;
 }
 
+.room-card header > div {
+  min-width: 0;
+}
+
 .room-card h4 {
   font-size: 0.82rem;
+  overflow-wrap: anywhere;
 }
 
 .room-card header strong {
+  flex: 0 0 auto;
   color: var(--color-brand);
   font-size: 0.76rem;
 }
@@ -187,6 +212,7 @@
   color: var(--color-text-muted);
   font-size: 0.7rem;
   line-height: 1.5;
+  overflow-wrap: anywhere;
 }
 
 .room-card > p,
@@ -257,12 +283,6 @@
   border-color: #efaab2;
   background: #fff0f2;
   color: #9e2433;
-}
-
-.seat-map .is-driver {
-  background: #e8eaf1;
-  color: #68708c;
-  cursor: not-allowed;
 }
 
 .operation-overlay {

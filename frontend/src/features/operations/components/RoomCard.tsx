@@ -28,7 +28,7 @@ export function RoomCard({
   const overCapacity = occupants.length > room.capacity
   return (
     <article className={`room-card${overCapacity ? ' has-conflict' : ''}`}>
-      <header><div><h4>{room.name}</h4><small>ID: {String(room.id)} · {labels[room.type] ?? room.type}</small></div><strong>{occupants.length}/{room.capacity}</strong></header>
+      <header><div><h4>{room.name}</h4><small>{labels[room.type] ?? room.type}</small></div><strong aria-label={`${occupants.length} de ${room.capacity} lugares ocupados`}>{occupants.length}/{room.capacity}</strong></header>
       {occupantNames.length ? <ul>{occupantNames.map((name, index) => <li key={`${occupants[index]}-${index}`}>{name}</li>)}</ul> : <p>Nenhum ocupante.</p>}
       {overCapacity ? <p className="operation-warning">Capacidade excedida</p> : null}
       <footer><button onClick={onAssign} type="button">Distribuir</button><button onClick={onEdit} type="button">Editar</button><button className="is-danger-link" onClick={onDelete} type="button">Excluir</button></footer>

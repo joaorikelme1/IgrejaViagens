@@ -53,6 +53,7 @@ const trip: Trip = {
 function systemUser(cpf: string, name: string): SystemUser {
   return {
     birthdate: '',
+    childCpfs: [],
     cpf,
     firstLogin: false,
     hasKids: false,
@@ -61,6 +62,7 @@ function systemUser(cpf: string, name: string): SystemUser {
     name,
     role: 'traveler',
     spouseName: '',
+    spouseCpf: '',
   }
 }
 
@@ -105,7 +107,8 @@ describe('HotelManagementPage', () => {
     expect(await screen.findByText('Hotel Central')).toBeInTheDocument()
     expect(screen.getByText('Ana')).toBeInTheDocument()
     expect(screen.getByText('1/2')).toBeInTheDocument()
-    expect(screen.getByText(/ID: room-legacy/)).toBeInTheDocument()
+    expect(screen.getByLabelText('1 de 2 lugares ocupados')).toBeInTheDocument()
+    expect(screen.queryByText(/room-legacy/)).not.toBeInTheDocument()
   })
 
   it('cadastra hotel mantendo a estrutura existente', async () => {

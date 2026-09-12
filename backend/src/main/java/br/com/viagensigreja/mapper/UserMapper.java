@@ -17,6 +17,9 @@ public class UserMapper {
         List<String> kids = user.getKids() == null
                 ? List.of()
                 : List.copyOf(user.getKids());
+        List<String> childCpfs = user.getChildCpfs() == null
+                ? List.of()
+                : List.copyOf(user.getChildCpfs());
 
         return new UserResponseDTO(
                 user.getCpf(),
@@ -26,8 +29,10 @@ public class UserMapper {
                 user.isFirstLogin(),
                 user.isMarried(),
                 user.getSpouseName(),
+                user.getSpouseCpf(),
                 user.isHasKids(),
-                kids
+                kids,
+                childCpfs
         );
     }
 

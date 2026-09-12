@@ -27,7 +27,7 @@ export function TravelerDetailsModal({
           <dl className="traveler-details-grid">
             <div><dt>Estado civil</dt><dd>{row.user.married ? 'Casado(a)' : 'Solteiro(a)'}</dd></div>
             <div>
-              <dt>Nome informado do cônjuge</dt>
+              <dt>{row.user.spouseCpf ? 'Cônjuge vinculado' : 'Nome informado do cônjuge'}</dt>
               <dd>{row.user.married && row.user.spouseName ? row.user.spouseName : '—'}</dd>
             </div>
             <div><dt>Filhos</dt><dd>{row.user.hasKids && row.user.kids.length ? row.user.kids.join(', ') : 'Nenhum'}</dd></div>
@@ -43,8 +43,9 @@ export function TravelerDetailsModal({
             </div>
           </dl>
           <p className="relationship-note">
-            O nome do cônjuge é informativo e não representa vínculo entre dois
-            usuários no backend.
+            {row.user.spouseCpf
+              ? 'Este cadastro possui vínculo familiar confirmado e participa da distribuição automática.'
+              : 'Familiares apenas informados por nome são associados automaticamente somente quando o cadastro correspondente é único.'}
           </p>
           <section className="receipt-summary" aria-labelledby="receipt-title">
             <h3 id="receipt-title">Comprovantes</h3>

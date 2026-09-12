@@ -92,20 +92,11 @@ function TripTravelersContent({ trip }: { trip: Trip }) {
   const saveForm = async (cpf: string, mutation: UserMutation) => {
     setFeedback(null)
     if (formState?.mode === 'edit') {
-      const updated = await updateUser(cpf, {
+      await updateUser(cpf, {
         ...mutation,
         role: formState.user.role,
       })
-      setSource((current) =>
-        current
-          ? {
-              ...current,
-              users: current.users.map((user) =>
-                user.cpf === cpf ? updated : user,
-              ),
-            }
-          : current,
-      )
+      await reloadSource()
       setFeedback('Viajante atualizado com sucesso.')
       return
     }
@@ -182,6 +173,7 @@ function TripTravelersContent({ trip }: { trip: Trip }) {
       ) : null}
       {formState ? (
         <UserForm
+          availableUsers={source.users}
           fixedRole="traveler"
           forceFirstLoginOnCreate
           onClose={() => setFormState(null)}

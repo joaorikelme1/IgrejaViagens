@@ -114,15 +114,6 @@ export function getSeatConflicts(
         seatNumber: seat.seatNumber,
       })
     }
-    if (seat.floor === 1 && seat.seatNumber === 1) {
-      conflicts.push({
-        busId: seat.busId,
-        floor: seat.floor,
-        key: `driver-seat-${seat.id}`,
-        message: `O assento reservado ao motorista no ônibus ${seat.busId} possui ocupante.`,
-        seatNumber: seat.seatNumber,
-      })
-    }
     if (!allowed.has(stripCpf(seat.userCpf))) {
       conflicts.push({
         busId: seat.busId,

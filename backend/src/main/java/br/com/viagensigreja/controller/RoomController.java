@@ -74,6 +74,15 @@ public class RoomController {
         return service.substituirTodos(rooms);
     }
 
+    @PutMapping("/trip/{tripId}/bulk")
+    @PreAuthorize("hasRole('ADMIN')")
+    public List<Room> substituirDaViagem(
+            @PathVariable String tripId,
+            @RequestBody List<Room> rooms
+    ) {
+        return service.substituirDaViagem(tripId, rooms);
+    }
+
     @GetMapping("/trip/{tripId}")
     @PreAuthorize("hasAnyRole('ADMIN', 'TRAVELER')")
     public List<?> listarPorViagem(

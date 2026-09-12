@@ -170,7 +170,7 @@ export function getRoomConflicts(
     if (matches.length > 1) {
       conflicts.push({
         key: `duplicate-room-${roomId}`,
-        message: `O ID de quarto ${roomId} aparece em mais de um hotel.`,
+        message: `O quarto “${matches[0].name}” aparece em mais de um hotel.`,
         roomId,
       })
     }
@@ -183,13 +183,13 @@ export function getRoomConflicts(
     if (!definition) {
       conflicts.push({
         key: `orphan-room-${record.id}`,
-        message: `O quarto ${record.id} existe no backend, mas não em nenhum hotel.`,
+        message: `O quarto “${record.name}” existe nos dados salvos, mas não em nenhum hotel.`,
         roomId: record.id,
       })
     } else if (record.occupants.length > definition.capacity) {
       conflicts.push({
         key: `capacity-${record.id}`,
-        message: `O quarto ${record.id} excede a capacidade (${record.occupants.length}/${definition.capacity}).`,
+        message: `O quarto “${definition.name}” excede a capacidade (${record.occupants.length}/${definition.capacity}).`,
         roomId: record.id,
       })
     }
@@ -199,7 +199,7 @@ export function getRoomConflicts(
       if (!allowed.has(normalized)) {
         conflicts.push({
           key: `non-member-${record.id}-${normalized}`,
-          message: `O CPF ${normalized} ocupa o quarto ${record.id}, mas não pertence à viagem.`,
+          message: `O CPF ${normalized} ocupa o quarto “${definition?.name ?? record.name}”, mas não pertence à viagem.`,
           roomId: record.id,
         })
       }
@@ -208,9 +208,14 @@ export function getRoomConflicts(
   byTraveler.forEach((roomIds, cpf) => {
     const uniqueRooms = [...new Set(roomIds)]
     if (uniqueRooms.length > 1) {
+      const roomNames = uniqueRooms.map((roomId) =>
+        knownRooms.get(roomId)?.[0]?.name
+        ?? rooms.find((room) => room.id === roomId)?.name
+        ?? 'quarto sem nome',
+      )
       conflicts.push({
         key: `multiple-rooms-${cpf}`,
-        message: `O CPF ${cpf} aparece nos quartos ${uniqueRooms.join(', ')}.`,
+        message: `O CPF ${cpf} aparece em mais de um quarto: ${roomNames.join(', ')}.`,
       })
     }
   })

@@ -102,6 +102,44 @@ public class SeatService {
         return repository.saveAll(prepared);
     }
 
+    @Transactional
+    public List<Seat> substituirDaViagem(String tripId, List<Seat> seats) {
+        String normalizedTripId = requiredText(tripId, "Viagem");
+        membership.requireTrip(normalizedTripId);
+        if (seats == null) {
+            throw badRequest("A lista de assentos e obrigatoria.");
+        }
+
+        List<Seat> prepared = new ArrayList<>();
+        Set<String> ids = new HashSet<>();
+        Set<String> coordinates = new HashSet<>();
+        Set<String> travelers = new HashSet<>();
+        for (Seat seat : seats) {
+            if (seat == null || !normalizedTripId.equals(seat.getTripId())) {
+                throw badRequest("Todos os assentos devem pertencer a viagem informada.");
+            }
+            String id = seat.getId();
+            if (id == null || id.isBlank()) {
+                id = "seat_" + UUID.randomUUID();
+            }
+            Seat normalized = normalizar(id, seat);
+            if (!ids.add(id)) {
+                throw badRequest("A lista possui IDs de assento duplicados.");
+            }
+            if (!coordinates.add(coordinateKey(normalized))) {
+                throw conflict("Um assento nao pode ser ocupado por mais de um viajante.");
+            }
+            if (!travelers.add(normalized.getUserCpf())) {
+                throw conflict("Um viajante nao pode ocupar mais de um assento na mesma viagem.");
+            }
+            prepared.add(normalized);
+        }
+
+        repository.deleteByTripId(normalizedTripId);
+        repository.flush();
+        return repository.saveAll(prepared);
+    }
+
     private Seat persistir(String id, Seat seat) {
         Seat existing = repository.findById(id).orElse(null);
         Seat prepared = normalizar(id, seat);

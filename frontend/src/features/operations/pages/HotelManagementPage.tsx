@@ -6,12 +6,14 @@ import {
   loadHotelSource,
   saveHotelStructure,
   saveRoomRecord,
+  saveTripRoomAssignments,
 } from '../api/operationsApi'
 import { HotelForm } from '../components/HotelForm'
 import { OperationConfirmModal } from '../components/OperationConfirmModal'
 import { RoomAssignment } from '../components/RoomAssignment'
 import { RoomCard } from '../components/RoomCard'
 import { RoomForm, type RoomFormValue } from '../components/RoomForm'
+import { assignFamiliesToRooms } from '../lib/familyAssignments'
 import {
   addHotel,
   addRoom,
@@ -52,6 +54,7 @@ function HotelManagementContent({ trip }: { trip: Trip }) {
   const [roomForm, setRoomForm] = useState<RoomTarget | null>(null)
   const [assignment, setAssignment] = useState<RoomTarget | null>(null)
   const [deleting, setDeleting] = useState<DeleteTarget | null>(null)
+  const [autoAssigning, setAutoAssigning] = useState(false)
 
   useEffect(() => {
     let current = true
@@ -187,6 +190,34 @@ function HotelManagementContent({ trip }: { trip: Trip }) {
     reloadTrips()
   }
 
+  const autoAssignFamilies = async () => {
+    if (!source) return
+    setFeedback(null)
+    setAutoAssigning(true)
+    try {
+      const result = assignFamiliesToRooms(
+        hotels,
+        source.rooms,
+        source.users,
+        trip.travelerCpfs,
+        trip.id,
+      )
+      if (!result.assignedCount) {
+        setFeedback('Todos os viajantes já possuem quarto ou não há vagas disponíveis.')
+        return
+      }
+      const saved = await saveTripRoomAssignments(trip.id, result.records)
+      setSource({ ...source, rooms: saved })
+      setFeedback(
+        `${result.assignedCount} viajante(s) acomodado(s), priorizando famílias. ${result.warnings.join(' ')}`.trim(),
+      )
+    } catch (error) {
+      setFeedback(errorMessage(error))
+    } finally {
+      setAutoAssigning(false)
+    }
+  }
+
   if (loadError) return <p className="operation-page-status" role="alert">{loadError}</p>
   if (!source) return <p className="operation-page-status" role="status">Carregando hotéis...</p>
 
@@ -194,12 +225,13 @@ function HotelManagementContent({ trip }: { trip: Trip }) {
     <div className="operations-page">
       <header className="operations-intro"><div><span>Hospedagem</span><h2>Hotéis de {trip.name}</h2><p>Quartos, capacidades e distribuição dos viajantes.</p></div><button className="operation-primary" onClick={() => setHotelForm('new')} type="button">Cadastrar hotel</button></header>
       <aside className="operation-info">Os dados de hotel ficam temporariamente na viagem; as ocupações continuam no contrato separado de quartos.</aside>
+      <div className="operation-auto-actions"><button disabled={autoAssigning || !hotels.some((hotel) => hotel.rooms.length) || conflicts.length > 0} onClick={() => void autoAssignFamilies()} type="button">{autoAssigning ? 'Acomodando...' : 'Acomodar famílias automaticamente'}</button></div>
       {feedback ? <p className="form-message is-success" role="status">{feedback}</p> : null}
       {conflicts.length ? <section className="operation-conflicts" role="alert"><h3>Conflitos de ocupação ({conflicts.length})</h3><ul>{conflicts.map((conflict) => <li key={conflict.key}>{conflict.message}</li>)}</ul></section> : null}
 
       {hotels.length ? <div className="hotel-list">{hotels.map((hotel) => (
         <section className="hotel-card" key={String(hotel.id)}>
-          <header><div><h3>{hotel.name}</h3><small>{hotel.rooms.length} quarto(s) · ID {String(hotel.id)}</small></div><div><button onClick={() => setHotelForm(hotel)} type="button">Editar hotel</button><button className="is-danger-link" onClick={() => setDeleting({ kind: 'hotel', hotel })} type="button">Excluir hotel</button><button className="operation-primary" onClick={() => setRoomForm({ hotel })} type="button">Adicionar quarto</button></div></header>
+          <header><div><h3>{hotel.name}</h3><small>{hotel.rooms.length} quarto(s)</small></div><div><button onClick={() => setHotelForm(hotel)} type="button">Editar hotel</button><button className="is-danger-link" onClick={() => setDeleting({ kind: 'hotel', hotel })} type="button">Excluir hotel</button><button className="operation-primary" onClick={() => setRoomForm({ hotel })} type="button">Adicionar quarto</button></div></header>
           {hotel.rooms.length ? <div className="room-grid">{hotel.rooms.map((room) => <RoomCard key={String(room.id)} occupants={roomOccupants(source.rooms, room.id)} onAssign={() => setAssignment({ hotel, room })} onDelete={() => setDeleting({ kind: 'room', hotel, room })} onEdit={() => setRoomForm({ hotel, room })} room={room} users={source.users} />)}</div> : <p className="operation-empty">Nenhum quarto cadastrado neste hotel.</p>}
         </section>
       ))}</div> : <section className="operation-empty-state"><h3>Nenhum hotel configurado</h3><p>Cadastre o primeiro hotel sem alterar os demais dados da viagem.</p></section>}
