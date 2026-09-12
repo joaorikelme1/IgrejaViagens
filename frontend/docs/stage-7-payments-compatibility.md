@@ -6,20 +6,18 @@ O módulo consulta `GET /payments`; a visão administrativa também consulta
 `GET /users`. A viagem ativa continua vindo do contexto de viagens, alimentado
 por `GET /trips`.
 
-O backend atual não possui atualização granular de pagamentos no conjunto de
-endpoints aprovado para esta etapa. Registro, edição, parcelamento e alteração
-de comprovantes usam temporariamente
-`PUT /payments/bulk`.
+Registro, edição, parcelamento e alteração de comprovantes usam o endpoint
+granular `PUT /payments/{id}`. O administrador pode configurar o plano de
+qualquer viajante associado à viagem ativa e anexar ou substituir comprovantes
+sem precisar acessar a sessão do viajante.
 
 O módulo legado não oferece exclusão autônoma de pagamentos, portanto essa ação
 não foi acrescentada à interface React. A remoção em cascata associada à
 exclusão de viagem continua pertencendo à gestão de viagens migrada na Etapa 4.
 
-Antes de cada escrita, a camada `paymentApi.ts` relê a coleção, altera somente o
-registro alvo e preserva campos desconhecidos tanto do pagamento quanto dos
-comprovantes. A interface só anuncia sucesso depois que a resposta do bulk
-contém o registro persistido esperado. Essas operações continuam sujeitas a
-concorrência e substituição integral da tabela.
+A camada `paymentApi.ts` envia apenas o registro alvo e preserva os comprovantes
+já carregados. A interface só anuncia sucesso depois que o backend devolve o
+pagamento persistido.
 
 ## Cálculos exibidos
 
@@ -50,7 +48,8 @@ incluindo nome, MIME, data, status e eventual motivo de recusa. O React:
 - não persiste arquivos em `localStorage` ou `sessionStorage`;
 - incorpora na visualização somente data URLs com MIME permitido;
 - renderiza metadados e fallbacks sem `dangerouslySetInnerHTML`;
-- mantém o status anterior até a confirmação do bulk;
+- permite que o administrador anexe ou substitua arquivos em todas as parcelas;
+- mantém alterações locais pendentes até a confirmação do backend;
 - recalcula parcelas pagas quando o administrador aprova ou recusa.
 
 Armazenar documentos financeiros como base64 dentro de uma coluna JSON e
@@ -58,9 +57,10 @@ retornar a coleção completa não é adequado para produção. O backend futuro
 usar armazenamento de arquivos privado, limites server-side, verificação de
 conteúdo, URLs temporárias e autorização por proprietário/administrador.
 
-## Segurança pendente
+## Segurança aplicada
 
-O filtro por CPF e papel é apenas visual. `GET /payments`, `GET /users` e
-`PUT /payments/bulk` continuam desprotegidos e permitem acesso ou substituição
-de toda a coleção. A autenticação e a autorização reais permanecem obrigatórias
-nas Etapas 9/10.
+Os endpoints financeiros exigem autenticação, sessão e CSRF nas escritas. O
+backend permite que administradores consultem e alterem pagamentos de qualquer
+viajante, enquanto viajantes continuam limitados ao próprio CPF e às viagens às
+quais estão associados. O poder administrativo não remove essas validações do
+servidor nem cria acesso público aos comprovantes.

@@ -16,6 +16,7 @@ import type {
   PaymentStatus,
   ReceiptStatus,
 } from '../model/paymentTypes'
+import { readReceiptFile } from '../utils/receiptFile'
 import './payments.css'
 
 function errorMessage(error: unknown) {
@@ -64,6 +65,9 @@ function AdminPaymentsContent({ trip }: { trip: Trip }) {
   }, [query, rows, status])
   const summary = source
     ? calculateFinancialSummary(trip, source.payments)
+    : null
+  const receiptOwnerName = receiptPayment
+    ? rows.find((row) => row.userCpf === receiptPayment.userCpf)?.name
     : null
   const usersWithoutPayment = (source?.users ?? []).filter(
     (user) =>
@@ -117,6 +121,35 @@ function AdminPaymentsContent({ trip }: { trip: Trip }) {
     )
   }
 
+  const uploadReceipt = async (installment: string, file: File) => {
+    if (!receiptPayment) return
+    setFeedback(null)
+    const data = await readReceiptFile(file)
+    const withReceipt: PaymentRecord = {
+      ...receiptPayment,
+      receipts: {
+        ...receiptPayment.receipts,
+        [installment]: {
+          data,
+          date: new Intl.DateTimeFormat('pt-BR').format(new Date()),
+          filename: file.name,
+          note: '',
+          status: 'pending',
+          type: file.type,
+        },
+      },
+    }
+    const updated = paymentWithReceiptStatus(
+      withReceipt,
+      installment,
+      'pending',
+    )
+    const saved = await savePayment(updated)
+    replaceLocalPayment(saved)
+    setReceiptPayment(saved)
+    setFeedback('Comprovante anexado pelo administrador e aguardando aprovação.')
+  }
+
   if (loadError) return <p className="payment-page-status" role="alert">{loadError}</p>
   if (!source || !summary) return <p className="payment-page-status" role="status">Carregando pagamentos...</p>
 
@@ -167,8 +200,13 @@ function AdminPaymentsContent({ trip }: { trip: Trip }) {
         <ReceiptViewer
           onClose={() => setReceiptPayment(null)}
           onStatusChange={updateReceiptStatus}
+          onUpload={uploadReceipt}
           payment={receiptPayment}
-          title="Comprovantes do pagamento"
+          title={
+            receiptOwnerName
+              ? `Comprovantes de ${receiptOwnerName}`
+              : 'Comprovantes do pagamento'
+          }
         />
       ) : null}
     </div>
