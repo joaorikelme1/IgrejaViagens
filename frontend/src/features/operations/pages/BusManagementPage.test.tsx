@@ -94,8 +94,13 @@ describe('BusManagementPage', () => {
   afterEach(() => cleanup())
 
   it('mostra pisos, assentos e ocupação usando o floor do backend', async () => {
-    render(<BusManagementPage />)
+    const { container } = render(<BusManagementPage />)
     expect(await screen.findByText('Ônibus bus-existing')).toBeInTheDocument()
+    expect(container.querySelector('.transport-bus-card')).toHaveClass('has-two-floors')
+    expect(container.querySelector('.transport-bus-card__info')).toBeInTheDocument()
+    expect(container.querySelector('.transport-bus-card__actions')).toContainElement(
+      screen.getByRole('button', { name: 'Editar ônibus' }),
+    )
     expect(screen.getByText('1º piso')).toBeInTheDocument()
     expect(screen.getByText('2º piso')).toBeInTheDocument()
     expect(
