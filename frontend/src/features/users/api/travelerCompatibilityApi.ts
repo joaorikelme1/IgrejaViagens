@@ -6,6 +6,9 @@ import { deleteUser, toSystemUser } from './usersApi'
 function mutationToApi(cpf: string, mutation: UserMutation) {
   return {
     birthdate: mutation.birthdate,
+    childCpfs: mutation.hasKids
+      ? [...new Set(mutation.childCpfs.map(stripCpf).filter(Boolean))]
+      : [],
     cpf,
     firstLogin: true,
     hasKids: mutation.hasKids,
@@ -17,6 +20,7 @@ function mutationToApi(cpf: string, mutation: UserMutation) {
     password: mutation.initialPassword,
     role: 'traveler',
     spouseName: mutation.married ? mutation.spouseName.trim() : '',
+    spouseCpf: mutation.married ? stripCpf(mutation.spouseCpf) : '',
   }
 }
 

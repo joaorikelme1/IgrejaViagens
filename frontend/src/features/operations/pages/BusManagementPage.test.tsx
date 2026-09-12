@@ -50,6 +50,7 @@ const trip: Trip = {
 }
 const user: SystemUser = {
   birthdate: '',
+  childCpfs: [],
   cpf,
   firstLogin: false,
   hasKids: false,
@@ -58,6 +59,7 @@ const user: SystemUser = {
   name: 'Ana',
   role: 'traveler',
   spouseName: '',
+  spouseCpf: '',
 }
 const occupiedSeat: SeatRecord = {
   id: 'seat-existing',
@@ -99,6 +101,8 @@ describe('BusManagementPage', () => {
     expect(
       screen.getByRole('button', { name: 'Assento 2, ocupado por Ana' }),
     ).toBeInTheDocument()
+    expect(screen.getAllByRole('button', { name: 'Assento 1, livre' })).toHaveLength(2)
+    expect(screen.queryByText('M')).not.toBeInTheDocument()
   })
 
   it('cadastra ônibus sem renumerar o ônibus existente', async () => {
@@ -116,7 +120,7 @@ describe('BusManagementPage', () => {
   it('associa viajante a assento livre somente após persistência', async () => {
     render(<BusManagementPage />)
     const freeSeats = await screen.findAllByRole('button', {
-      name: 'Assento 2, livre',
+      name: 'Assento 1, livre',
     })
     await userEvent.click(freeSeats[0])
     await userEvent.click(screen.getByRole('button', { name: /Ana.*Selecionar/ }))
@@ -125,7 +129,7 @@ describe('BusManagementPage', () => {
     expect(savedSeat).toMatchObject({
       busId: 'bus-existing',
       floor: 1,
-      seatNumber: 2,
+      seatNumber: 1,
       userCpf: cpf,
     })
   })

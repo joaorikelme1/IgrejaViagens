@@ -67,6 +67,15 @@ public class SeatController {
         return service.substituirTodos(seats);
     }
 
+    @PutMapping("/trip/{tripId}/bulk")
+    @PreAuthorize("hasRole('ADMIN')")
+    public List<Seat> substituirDaViagem(
+            @PathVariable String tripId,
+            @RequestBody List<Seat> seats
+    ) {
+        return service.substituirDaViagem(tripId, seats);
+    }
+
     @GetMapping("/trip/{tripId}")
     @PreAuthorize("hasAnyRole('ADMIN', 'TRAVELER')")
     public List<Seat> listarPorViagem(

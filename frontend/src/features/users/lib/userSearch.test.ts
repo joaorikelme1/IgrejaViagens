@@ -5,6 +5,7 @@ import { filterUsers } from './userSearch'
 const users: SystemUser[] = [
   {
     birthdate: '',
+    childCpfs: [],
     cpf: '11144477735',
     firstLogin: true,
     hasKids: false,
@@ -13,6 +14,7 @@ const users: SystemUser[] = [
     name: 'Tiago Viajante',
     role: 'traveler',
     spouseName: '',
+    spouseCpf: '',
   },
 ]
 

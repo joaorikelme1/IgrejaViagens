@@ -194,7 +194,19 @@ class RoleAuthorizationIntegrationTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("[]"))
                 .andExpect(status().isForbidden());
+        mockMvc.perform(put("/rooms/trip/{tripId}/bulk", OWN_TRIP)
+                        .session(session)
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("[]"))
+                .andExpect(status().isForbidden());
         mockMvc.perform(put("/seats/bulk")
+                        .session(session)
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("[]"))
+                .andExpect(status().isForbidden());
+        mockMvc.perform(put("/seats/trip/{tripId}/bulk", OWN_TRIP)
                         .session(session)
                         .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
@@ -608,6 +620,27 @@ class RoleAuthorizationIntegrationTest {
     }
 
     @Test
+    void tripScopedRoomBulkIsAtomicAndPreservesOtherTrips() throws Exception {
+        MockHttpSession session = login(ADMIN_CPF, "admin-secret");
+        Room familyRoom = new Room(
+                "room-family", "family", 2, "Quarto familiar", "hotel-1",
+                List.of(TRAVELER_CPF, COMPANION_CPF), OWN_TRIP
+        );
+
+        mockMvc.perform(put("/rooms/trip/{tripId}/bulk", OWN_TRIP)
+                        .session(session)
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsBytes(List.of(familyRoom))))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].occupants.length()").value(2));
+
+        assertFalse(roomRepository.existsById("room-own"));
+        assertTrue(roomRepository.existsById("room-family"));
+        assertTrue(roomRepository.existsById("room-other"));
+    }
+
+    @Test
     void granularSeatCommandsRejectDoubleBookingAndDeleteOnlyTheTarget() throws Exception {
         MockHttpSession session = login(ADMIN_CPF, "admin-secret");
         Seat duplicate = new Seat(
@@ -629,6 +662,26 @@ class RoleAuthorizationIntegrationTest {
                 .andExpect(status().isOk());
 
         assertFalse(seatRepository.existsById("seat-own"));
+        assertTrue(seatRepository.existsById("seat-other"));
+    }
+
+    @Test
+    void tripScopedSeatBulkPreservesOtherTrips() throws Exception {
+        MockHttpSession session = login(ADMIN_CPF, "admin-secret");
+        Seat familySeat = new Seat(
+                "seat-family", OWN_TRIP, "bus-own", 1, 8, COMPANION_CPF
+        );
+
+        mockMvc.perform(put("/seats/trip/{tripId}/bulk", OWN_TRIP)
+                        .session(session)
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsBytes(List.of(familySeat))))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].userCpf").value(COMPANION_CPF));
+
+        assertFalse(seatRepository.existsById("seat-own"));
+        assertTrue(seatRepository.existsById("seat-family"));
         assertTrue(seatRepository.existsById("seat-other"));
     }
 

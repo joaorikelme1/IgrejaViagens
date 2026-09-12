@@ -2,6 +2,7 @@ import type { UserRole } from '../../auth/model/authTypes'
 
 export interface SystemUser {
   birthdate: string
+  childCpfs: string[]
   cpf: string
   firstLogin: boolean
   hasKids: boolean
@@ -10,10 +11,12 @@ export interface SystemUser {
   name: string
   role: UserRole
   spouseName: string
+  spouseCpf: string
 }
 
 export interface UserMutation {
   birthdate: string
+  childCpfs: string[]
   firstLogin: boolean
   hasKids: boolean
   kids: string[]
@@ -21,6 +24,7 @@ export interface UserMutation {
   name: string
   role: UserRole
   spouseName: string
+  spouseCpf: string
   initialPassword?: string
 }
 

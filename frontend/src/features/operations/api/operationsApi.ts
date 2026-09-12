@@ -166,6 +166,24 @@ export async function saveRoomRecord(room: RoomRecord) {
   return saved
 }
 
+export async function saveTripRoomAssignments(tripId: string, rooms: RoomRecord[]) {
+  const persisted = await httpRequest<unknown>(
+    `/rooms/trip/${encodeURIComponent(tripId)}/bulk`,
+    {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(rooms),
+    },
+  )
+  const saved = records(persisted, 'quartos')
+    .map(toRoom)
+    .filter((room): room is RoomRecord => room !== null && room.tripId === tripId)
+  if (saved.length !== rooms.length) {
+    throw new Error('O backend não confirmou toda a distribuição dos quartos.')
+  }
+  return saved
+}
+
 export async function deleteRoomRecords(tripId: string, roomIds: string[]) {
   await Promise.all(
     [...new Set(roomIds)].map((id) =>
@@ -217,6 +235,24 @@ export async function saveSeatRecord(seat: SeatRecord) {
     saved.userCpf !== normalized.userCpf
   ) {
     throw new Error('O backend não confirmou o assento persistido.')
+  }
+  return saved
+}
+
+export async function saveTripSeatAssignments(tripId: string, seats: SeatRecord[]) {
+  const persisted = await httpRequest<unknown>(
+    `/seats/trip/${encodeURIComponent(tripId)}/bulk`,
+    {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(seats),
+    },
+  )
+  const saved = records(persisted, 'assentos')
+    .map(toSeat)
+    .filter((seat): seat is SeatRecord => seat !== null && seat.tripId === tripId)
+  if (saved.length !== seats.length) {
+    throw new Error('O backend não confirmou toda a distribuição dos assentos.')
   }
   return saved
 }

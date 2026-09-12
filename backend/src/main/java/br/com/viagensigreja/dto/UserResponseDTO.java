@@ -16,7 +16,9 @@ public record UserResponseDTO(
         boolean firstLogin,
         boolean married,
         String spouseName,
+        String spouseCpf,
         boolean hasKids,
-        List<String> kids
+        List<String> kids,
+        List<String> childCpfs
 ) {
 }

@@ -4,6 +4,7 @@ import { listUsers, updateUser } from './usersApi'
 
 const mutation: UserMutation = {
   birthdate: '1990-05-10',
+  childCpfs: ['52998224725'],
   firstLogin: false,
   hasKids: true,
   kids: ['Lia', 'Caio'],
@@ -11,6 +12,7 @@ const mutation: UserMutation = {
   name: 'Ana Atualizada',
   role: 'admin',
   spouseName: 'Bruno',
+  spouseCpf: '12345678909',
 }
 
 function jsonResponse(body: unknown) {
@@ -79,8 +81,10 @@ describe('usersApi', () => {
 
     expect(persisted).toMatchObject({
       cpf: '11144477735',
+      childCpfs: ['52998224725'],
       name: 'Ana Atualizada',
       spouseName: 'Bruno',
+      spouseCpf: '12345678909',
       kids: ['Lia', 'Caio'],
       serverMetadata: { version: 7 },
     })

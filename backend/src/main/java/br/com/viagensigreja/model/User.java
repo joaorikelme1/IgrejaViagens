@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.*;
 
 import java.util.List;
+import java.util.Set;
 
 @Entity
 @Table(name = "app_user")
@@ -25,10 +26,33 @@ public class User {
 
     private boolean married;
     private String spouseName;
+    private String spouseCpf;
 
     private boolean hasKids;
 
     @ElementCollection
     @CollectionTable(name = "user_kids", joinColumns = @JoinColumn(name = "user_cpf"))
     private List<String> kids;
+
+    @ElementCollection
+    @CollectionTable(name = "user_child_cpfs", joinColumns = @JoinColumn(name = "user_cpf"))
+    @Column(name = "child_cpf")
+    private Set<String> childCpfs;
+
+    /** Compatibilidade com criadores internos anteriores aos vinculos por CPF. */
+    public User(
+            String cpf,
+            String name,
+            String password,
+            String role,
+            String birthdate,
+            boolean firstLogin,
+            boolean married,
+            String spouseName,
+            boolean hasKids,
+            List<String> kids
+    ) {
+        this(cpf, name, password, role, birthdate, firstLogin, married,
+                spouseName, null, hasKids, kids, new java.util.LinkedHashSet<>());
+    }
 }

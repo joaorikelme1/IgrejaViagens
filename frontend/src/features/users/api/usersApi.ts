@@ -30,6 +30,15 @@ function readKids(value: unknown) {
     : []
 }
 
+function readCpfs(value: unknown) {
+  return Array.isArray(value)
+    ? [...new Set(value
+        .filter((cpf): cpf is string => typeof cpf === 'string')
+        .map(stripCpf)
+        .filter(Boolean))]
+    : []
+}
+
 export function toSystemUser(value: unknown): SystemUser | null {
   if (typeof value !== 'object' || value === null || Array.isArray(value)) {
     return null
@@ -43,6 +52,7 @@ export function toSystemUser(value: unknown): SystemUser | null {
   // contrato legado entrem no estado React.
   return {
     birthdate: readString(source.birthdate),
+    childCpfs: readCpfs(source.childCpfs),
     cpf,
     firstLogin: source.firstLogin === true,
     hasKids: source.hasKids === true,
@@ -51,6 +61,7 @@ export function toSystemUser(value: unknown): SystemUser | null {
     name: readString(source.name, 'Usuário sem nome'),
     role: readRole(source.role),
     spouseName: readString(source.spouseName),
+    spouseCpf: stripCpf(readString(source.spouseCpf)),
   }
 }
 
@@ -63,9 +74,13 @@ function mutationToApi(cpf: string, mutation: UserMutation) {
     firstLogin: mutation.firstLogin,
     married: mutation.married,
     spouseName: mutation.married ? mutation.spouseName.trim() : '',
+    spouseCpf: mutation.married ? stripCpf(mutation.spouseCpf) : '',
     hasKids: mutation.hasKids,
     kids: mutation.hasKids
       ? mutation.kids.map((kid) => kid.trim()).filter(Boolean)
+      : [],
+    childCpfs: mutation.hasKids
+      ? [...new Set(mutation.childCpfs.map(stripCpf).filter(Boolean))]
       : [],
   }
 }

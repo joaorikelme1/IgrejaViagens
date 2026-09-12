@@ -15,14 +15,16 @@ interface CapturedRequest {
 
 const userMutation: UserMutation = {
   birthdate: '',
+  childCpfs: ['52998224725'],
   firstLogin: true,
-  hasKids: false,
-  kids: [],
+  hasKids: true,
+  kids: ['Lia'],
   initialPassword: 'senha-temporaria',
-  married: false,
+  married: true,
   name: 'Tiago',
   role: 'traveler',
-  spouseName: '',
+  spouseName: 'Bruna',
+  spouseCpf: '12345678909',
 }
 
 function pathOf(input: RequestInfo | URL) {
@@ -98,10 +100,12 @@ describe('associações transacionais de viajantes', () => {
       path: '/trips/trip-1/travelers',
       body: {
         cpf: '11144477735',
+        childCpfs: ['52998224725'],
         firstLogin: true,
         name: 'Tiago',
         password: 'senha-temporaria',
         role: 'traveler',
+        spouseCpf: '12345678909',
       },
     })
     expect(created).not.toHaveProperty('password')

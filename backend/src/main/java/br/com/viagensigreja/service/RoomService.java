@@ -96,6 +96,36 @@ public class RoomService {
         return repository.saveAll(prepared);
     }
 
+    @Transactional
+    public List<Room> substituirDaViagem(String tripId, List<Room> rooms) {
+        String normalizedTripId = requiredText(tripId, "Viagem");
+        membership.requireTrip(normalizedTripId);
+        if (rooms == null) {
+            throw badRequest("A lista de quartos e obrigatoria.");
+        }
+
+        Set<String> ids = new HashSet<>();
+        List<Room> prepared = new ArrayList<>();
+        for (Room room : rooms) {
+            if (room == null || !normalizedTripId.equals(room.getTripId())) {
+                throw badRequest("Todos os quartos devem pertencer a viagem informada.");
+            }
+            String id = room.getId();
+            if (id == null || id.isBlank()) {
+                id = "room_" + UUID.randomUUID();
+            }
+            if (!ids.add(id)) {
+                throw badRequest("A lista possui IDs de quarto duplicados.");
+            }
+            prepared.add(normalizar(id, room));
+        }
+        validarOcupacoesUnicas(prepared);
+
+        repository.deleteByTripId(normalizedTripId);
+        repository.flush();
+        return repository.saveAll(prepared);
+    }
+
     private Room persistir(String id, Room room) {
         Room existing = repository.findById(id).orElse(null);
         Room prepared = normalizar(id, room);

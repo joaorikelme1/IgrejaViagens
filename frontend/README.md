@@ -41,6 +41,14 @@ Os cálculos e limites dos pagamentos estão em
 Os contratos duplicados de hotel/transporte e seus riscos estão em
 [`docs/stage-8-operations-compatibility.md`](docs/stage-8-operations-compatibility.md).
 
+## Ecossistema familiar
+
+No cadastro, o administrador pode vincular conjuge e filhos a usuarios
+existentes por CPF. Hotel e Transporte oferecem distribuicao automatica que
+preserva escolhas manuais e prioriza familiares no mesmo quarto ou proximos no
+mesmo piso do onibus. A gravacao usa `PUT /rooms/trip/{tripId}/bulk` e
+`PUT /seats/trip/{tripId}/bulk`, de forma atomica e limitada a viagem ativa.
+
 ## Rotas
 
 | Rota | Papel | Estado |

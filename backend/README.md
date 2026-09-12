@@ -69,6 +69,13 @@ banco aplica unicidade por pagamento/viajante/viagem e por posicao de assento,
 evitando sobrescritas globais e reservas duplicadas. O Flyway executa as
 migracoes versionadas antes de o Hibernate validar o schema.
 
+Os vinculos familiares usam CPF (`spouseCpf` e `childCpfs`) sem remover os
+campos legados de nomes. O vinculo de conjuges e bidirecional e nomes antigos
+so sao reconciliados quando identificam um unico cadastro. As distribuicoes
+automaticas usam `PUT /rooms/trip/{tripId}/bulk` e
+`PUT /seats/trip/{tripId}/bulk`, ambos administrativos e transacionais por
+viagem; dados de outras viagens nao sao substituidos.
+
 Em producao HTTPS, configure `SESSION_COOKIE_SECURE=true` e restrinja
 `CORS_ALLOWED_ORIGINS` a origem exata do frontend. O arquivo `.env` esta ignorado
 pelo Git; somente `.env.example` deve ser versionado.

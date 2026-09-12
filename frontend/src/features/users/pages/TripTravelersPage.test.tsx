@@ -45,6 +45,7 @@ const trip: Trip = {
 
 const traveler: SystemUser = {
   birthdate: '1990-05-10',
+  childCpfs: [],
   cpf: '11144477735',
   firstLogin: false,
   hasKids: true,
@@ -53,6 +54,7 @@ const traveler: SystemUser = {
   name: 'Tiago Viajante',
   role: 'traveler',
   spouseName: 'Bruna',
+  spouseCpf: '',
 }
 
 const available: SystemUser = {
@@ -60,6 +62,7 @@ const available: SystemUser = {
   cpf: '52998224725',
   name: 'Carla Disponível',
   spouseName: '',
+  spouseCpf: '',
   married: false,
 }
 
@@ -122,7 +125,7 @@ describe('TripTravelersPage', () => {
 
     expect(screen.getByText('Bruna')).toBeInTheDocument()
     expect(screen.getByText(/recibo.pdf · pending/)).toBeInTheDocument()
-    expect(screen.getByText(/não representa vínculo/)).toBeInTheDocument()
+    expect(screen.getByText(/cadastro correspondente é único/)).toBeInTheDocument()
   })
 
   it('adiciona usuário existente à viagem', async () => {

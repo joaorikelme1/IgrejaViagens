@@ -44,7 +44,6 @@ export function HotelForm({
           <div className="operation-modal__body">
             {error ? <p className="form-message is-error" role="alert">{error}</p> : null}
             <label className="operation-field">Nome do hotel<input disabled={saving} onChange={(event) => setName(event.currentTarget.value)} value={name} /></label>
-            {hotel ? <small className="operation-id">ID preservado: {String(hotel.id)}</small> : null}
           </div>
           <footer className="operation-modal__footer"><button disabled={saving} onClick={onClose} type="button">Cancelar</button><button className="is-primary" disabled={saving} type="submit">{saving ? 'Salvando...' : 'Salvar hotel'}</button></footer>
         </form>

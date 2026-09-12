@@ -11,6 +11,7 @@ export function createEmptyUserForm(
 ): UserFormValues {
   return {
     birthdate: '',
+    childCpfs: [],
     cpf: '',
     firstLogin: true,
     hasKids: false,
@@ -20,12 +21,14 @@ export function createEmptyUserForm(
     name: '',
     role,
     spouseName: '',
+    spouseCpf: '',
   }
 }
 
 export function userToForm(user: SystemUser): UserFormValues {
   return {
     birthdate: user.birthdate,
+    childCpfs: [...user.childCpfs],
     cpf: user.cpf,
     firstLogin: user.firstLogin,
     hasKids: user.hasKids,
@@ -35,6 +38,7 @@ export function userToForm(user: SystemUser): UserFormValues {
     name: user.name,
     role: user.role,
     spouseName: user.spouseName,
+    spouseCpf: user.spouseCpf,
   }
 }
 
@@ -63,6 +67,7 @@ export function userFormSubmission(
   const cpf = stripCpf(values.cpf)
   const mutation: UserMutation = {
     birthdate: values.birthdate,
+    childCpfs: values.hasKids ? [...values.childCpfs] : [],
     firstLogin: values.firstLogin,
     hasKids: values.hasKids,
     kids: values.hasKids
@@ -72,6 +77,7 @@ export function userFormSubmission(
     name: values.name.trim(),
     role: values.role,
     spouseName: values.married ? values.spouseName.trim() : '',
+    spouseCpf: values.married ? stripCpf(values.spouseCpf) : '',
     ...(!isEditing ? { initialPassword: values.initialPassword } : {}),
   }
   return { cpf, mutation }

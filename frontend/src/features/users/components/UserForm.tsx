@@ -11,6 +11,7 @@ import { ChildrenFields } from './ChildrenFields'
 import { SpouseFields } from './SpouseFields'
 
 interface UserFormProps {
+  availableUsers?: SystemUser[]
   fixedRole?: UserMutation['role']
   forceFirstLoginOnCreate?: boolean
   onClose: () => void
@@ -26,6 +27,7 @@ function errorMessage(error: unknown) {
 }
 
 export function UserForm({
+  availableUsers = [],
   fixedRole,
   forceFirstLoginOnCreate = false,
   onClose,
@@ -39,6 +41,9 @@ export function UserForm({
   )
   const [isSaving, setIsSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const relationshipOptions = availableUsers.filter(
+    (candidate) => candidate.cpf !== user?.cpf,
+  )
 
   const submit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
@@ -183,15 +188,35 @@ export function UserForm({
             </div>
 
             <SpouseFields
+              availableUsers={relationshipOptions}
               disabled={isSaving}
               married={values.married}
-              onMarriedChange={(married) => setValues({ ...values, married })}
+              onMarriedChange={(married) =>
+                setValues({
+                  ...values,
+                  married,
+                  spouseCpf: married ? values.spouseCpf : '',
+                })
+              }
+              onSpouseCpfChange={(spouseCpf) => {
+                const spouse = relationshipOptions.find(
+                  (candidate) => candidate.cpf === spouseCpf,
+                )
+                setValues({
+                  ...values,
+                  spouseCpf,
+                  spouseName: spouse?.name ?? values.spouseName,
+                })
+              }}
               onSpouseNameChange={(spouseName) =>
                 setValues({ ...values, spouseName })
               }
+              spouseCpf={values.spouseCpf}
               spouseName={values.spouseName}
             />
             <ChildrenFields
+              availableUsers={relationshipOptions}
+              childCpfs={values.childCpfs}
               disabled={isSaving}
               hasKids={values.hasKids}
               kids={values.kids}
@@ -199,9 +224,20 @@ export function UserForm({
                 setValues({
                   ...values,
                   hasKids,
+                  childCpfs: hasKids ? values.childCpfs : [],
                   kids: hasKids && values.kids.length === 0 ? [''] : values.kids,
                 })
               }
+              onChildCpfsChange={(childCpfs) => {
+                const linkedNames = relationshipOptions
+                  .filter((candidate) => childCpfs.includes(candidate.cpf))
+                  .map((candidate) => candidate.name)
+                setValues({
+                  ...values,
+                  childCpfs,
+                  kids: [...new Set([...values.kids.filter(Boolean), ...linkedNames])],
+                })
+              }}
               onKidsChange={(kids) => setValues({ ...values, kids })}
             />
           </div>

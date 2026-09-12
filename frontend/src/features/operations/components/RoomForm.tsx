@@ -59,7 +59,6 @@ export function RoomForm({
           <div className="operation-modal__body operation-form-grid">
             {error ? <p className="form-message is-error operation-wide" role="alert">{error}</p> : null}
             <label className="operation-field operation-wide">Número ou nome<input disabled={saving} onChange={(event) => setName(event.currentTarget.value)} value={name} /></label>
-            {room ? <small className="operation-id operation-wide">ID preservado: {String(room.id)}</small> : null}
             <label className="operation-field">Tipo<select disabled={saving} onChange={(event) => { const next = event.currentTarget.value; setType(next); if (capacities[next]) setCapacity(capacities[next]) }} value={capacities[type] ? type : 'custom'}><option value="single">Individual</option><option value="double">Duplo</option><option value="family">Familiar</option><option value="custom">Personalizado</option></select></label>
             <label className="operation-field">Capacidade<input disabled={saving || Boolean(capacities[type])} max="100" min="1" onChange={(event) => setCapacity(Number(event.currentTarget.value))} type="number" value={capacity} /></label>
           </div>

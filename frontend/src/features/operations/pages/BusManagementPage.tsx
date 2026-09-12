@@ -6,6 +6,7 @@ import {
   loadTransportSource,
   saveBusStructure,
   saveSeatRecord,
+  saveTripSeatAssignments,
 } from '../api/operationsApi'
 import { BusEditorModal } from '../components/BusEditorModal'
 import { OperationConfirmModal } from '../components/OperationConfirmModal'
@@ -19,6 +20,7 @@ import {
   updateBus,
 } from '../lib/transportOperations'
 import { createUniqueId } from '../lib/hotelOperations'
+import { assignFamiliesToSeats } from '../lib/familyAssignments'
 import type { SeatRecord, TransportSource } from '../model/operationTypes'
 import './operations.css'
 
@@ -43,6 +45,7 @@ function BusManagementContent({ trip }: { trip: Trip }) {
   const [editing, setEditing] = useState<EditingBus | null>(null)
   const [assigning, setAssigning] = useState<SeatTarget | null>(null)
   const [deleting, setDeleting] = useState<DeleteTarget | null>(null)
+  const [autoAssigning, setAutoAssigning] = useState(false)
 
   useEffect(() => {
     let current = true
@@ -143,13 +146,42 @@ function BusManagementContent({ trip }: { trip: Trip }) {
     }
   }
 
+  const autoAssignFamilies = async () => {
+    if (!source) return
+    setFeedback(null)
+    setAutoAssigning(true)
+    try {
+      const result = assignFamiliesToSeats(
+        buses,
+        source.seats,
+        source.users,
+        trip.travelerCpfs,
+        trip.id,
+      )
+      if (!result.assignedCount) {
+        setFeedback('Todos os viajantes já possuem assento ou não há vagas disponíveis.')
+        return
+      }
+      const saved = await saveTripSeatAssignments(trip.id, result.records)
+      setSource({ ...source, seats: saved })
+      setFeedback(
+        `${result.assignedCount} viajante(s) sentado(s), priorizando famílias. ${result.warnings.join(' ')}`.trim(),
+      )
+    } catch (error) {
+      setFeedback(errorMessage(error))
+    } finally {
+      setAutoAssigning(false)
+    }
+  }
+
   if (loadError) return <p className="operation-page-status" role="alert">{loadError}</p>
   if (!source) return <p className="operation-page-status" role="status">Carregando transporte...</p>
 
   return (
     <div className="operations-page">
       <header className="operations-intro"><div><span>Transporte</span><h2>Ônibus de {trip.name}</h2><p>Configuração dos veículos e distribuição de assentos por piso.</p></div><button className="operation-primary" onClick={() => setEditing({ bus: createBus(buses), isNew: true })} type="button">Cadastrar ônibus</button></header>
-      <aside className="operation-info">O primeiro assento do primeiro piso permanece reservado ao motorista. Assentos nunca são descartados silenciosamente ao editar a capacidade.</aside>
+      <aside className="operation-info">O mapa apresenta somente os lugares destinados aos passageiros. Assentos nunca são descartados silenciosamente ao editar a capacidade.</aside>
+      <div className="operation-auto-actions"><button disabled={autoAssigning || buses.length === 0 || conflicts.length > 0} onClick={() => void autoAssignFamilies()} type="button">{autoAssigning ? 'Distribuindo...' : 'Distribuir famílias automaticamente'}</button></div>
       {feedback ? <p className="form-message is-success" role="status">{feedback}</p> : null}
       {conflicts.length ? <section className="operation-conflicts" role="alert"><h3>Inconsistências de assentos ({conflicts.length})</h3><ul>{conflicts.map((conflict) => <li key={conflict.key}>{conflict.message}</li>)}</ul></section> : null}
 
