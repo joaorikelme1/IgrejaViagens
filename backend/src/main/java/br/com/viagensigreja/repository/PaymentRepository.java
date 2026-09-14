@@ -14,6 +14,8 @@ public interface PaymentRepository extends JpaRepository<Payment, String> {
 
     List<Payment> findByUserCpfAndTripId(String cpf, String tripId);
 
+    List<Payment> findByTripId(String tripId);
+
     void deleteByUserCpf(String cpf);
 
     void deleteByUserCpfAndTripId(String cpf, String tripId);

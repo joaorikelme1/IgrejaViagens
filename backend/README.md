@@ -64,6 +64,25 @@ As operacoes de inclusao/remocao de viajante e as exclusoes globais de usuario e
 viagem sao transacionais. O backend limpa pagamentos, assentos, quartos e demais
 recursos dependentes sem depender de varias escritas do navegador.
 
+## Fundacao para planejamento com IA
+
+A primeira fase da fundacao de IA nao chama nenhum modelo e nao altera
+distribuicoes. Ela adiciona versionamento otimista das viagens, preferencias
+operacionais estruturadas, metadados auditaveis para futuros planos e o
+`TripPlanningSnapshotService`.
+
+O snapshot usa a configuracao de onibus/hoteis mantida na viagem e as tabelas de
+quartos, assentos e pagamentos como as telas atuais. Antes de sair do backend,
+CPFs e IDs operacionais sao substituidos por aliases temporarios. Nomes de
+usuarios, senhas, datas de nascimento, fotos e comprovantes nao fazem parte do
+contrato. Preferencias marcadas para nao participar do planejamento tambem sao
+omitidas. O hash SHA-256 identifica exatamente o estado analisado e permitira
+invalidar propostas quando a viagem mudar.
+
+As tabelas e colunas dessa fase sao criadas pela migracao
+`V4__ai_planning_foundation.sql`. Ainda nao existem endpoint, painel, chamada de
+provedor ou aplicacao de propostas; esses itens pertencem a fases posteriores.
+
 Pagamentos, quartos e assentos possuem contratos granulares de atualizacao. O
 banco aplica unicidade por pagamento/viajante/viagem e por posicao de assento,
 evitando sobrescritas globais e reservas duplicadas. O Flyway executa as
