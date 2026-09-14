@@ -9,6 +9,8 @@ export interface BusConfig {
 
 export interface Trip {
   id: string
+  version?: number
+  updatedAt?: string
   name: string
   destination: string
   departurePlace: string
