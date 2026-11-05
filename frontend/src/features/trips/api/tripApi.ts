@@ -89,6 +89,11 @@ export function toTrip(value: unknown): Trip | null {
 
   return {
     id: trip.id,
+    version:
+      trip.version === null || trip.version === undefined
+        ? undefined
+        : readNumber(trip.version),
+    updatedAt: readString(trip.updatedAt) || undefined,
     name:
       typeof trip.name === 'string' && trip.name.trim()
         ? trip.name
@@ -120,6 +125,7 @@ function parseTripList(value: unknown) {
 export function tripToApi(trip: Trip) {
   return {
     id: trip.id,
+    version: trip.version,
     name: trip.name,
     destination: trip.destination,
     departurePlace: trip.departurePlace,

@@ -84,6 +84,8 @@ public class TripService {
                     "Ja existe uma viagem com este ID."
             );
         }
+        trip.setVersion(null);
+        trip.setUpdatedAt(null);
         trip.setTravelersJson("[]");
         validarViagem(trip);
         return repository.save(trip);
@@ -95,7 +97,10 @@ public class TripService {
             throw badRequest("Os dados da viagem sao obrigatorios.");
         }
         Trip existing = buscar(id);
+        requireCurrentVersion(trip, existing);
         trip.setId(id);
+        trip.setVersion(existing.getVersion());
+        trip.setUpdatedAt(existing.getUpdatedAt());
         // Associações são alteradas somente pelos endpoints transacionais de
         // viajantes, que também mantêm pagamentos, quartos e assentos coerentes.
         trip.setTravelersJson(existing.getTravelersJson());
@@ -106,6 +111,7 @@ public class TripService {
     @Transactional
     public List<Trip> substituirTodos(List<Trip> trips) {
         Set<String> retainedIds = new HashSet<>();
+        List<Trip> prepared = new ArrayList<>();
         trips.forEach(trip -> {
             if (trip == null) {
                 throw badRequest("A lista de viagens possui um item vazio.");
@@ -120,15 +126,26 @@ public class TripService {
                         "A lista contem IDs de viagem duplicados."
                 );
             }
+            repository.findById(trip.getId()).ifPresentOrElse(existing -> {
+                requireCurrentVersion(trip, existing);
+                trip.setVersion(existing.getVersion());
+                trip.setUpdatedAt(existing.getUpdatedAt());
+            }, () -> {
+                trip.setVersion(null);
+                trip.setUpdatedAt(null);
+            });
+            prepared.add(trip);
         });
 
         repository.findAll().stream()
                 .map(Trip::getId)
                 .filter(id -> !retainedIds.contains(id))
-                .forEach(this::deleteDependentResources);
+                .forEach(id -> {
+                    deleteDependentResources(id);
+                    repository.deleteById(id);
+                });
 
-        repository.deleteAll();
-        return repository.saveAll(trips);
+        return repository.saveAll(prepared);
     }
 
     @Transactional
@@ -354,5 +371,15 @@ public class TripService {
 
     private ResponseStatusException badRequest(String message) {
         return new ResponseStatusException(HttpStatus.BAD_REQUEST, message);
+    }
+
+    private void requireCurrentVersion(Trip submitted, Trip existing) {
+        if (submitted.getVersion() != null
+                && !submitted.getVersion().equals(existing.getVersion())) {
+            throw new ResponseStatusException(
+                    HttpStatus.CONFLICT,
+                    "A viagem foi alterada por outro usuario. Recarregue os dados e tente novamente."
+            );
+        }
     }
 }

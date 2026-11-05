@@ -11,12 +11,15 @@ import br.com.viagensigreja.repository.TripRepository;
 import br.com.viagensigreja.repository.UserRepository;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.server.ResponseStatusException;
 import tools.jackson.databind.ObjectMapper;
 
 import java.time.LocalDate;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -76,5 +79,51 @@ class TripServiceTest {
         assertEquals(admin.getCpf(), paymentCaptor.getValue().getUserCpf());
         assertEquals(trip.getId(), paymentCaptor.getValue().getTripId());
         assertEquals(1, paymentCaptor.getValue().getTotalInstallments());
+    }
+
+    @Test
+    void rejectsUpdateBasedOnStaleTripVersion() {
+        TripRepository tripRepository = mock(TripRepository.class);
+        Trip existing = validTrip();
+        existing.setVersion(4L);
+        Trip submitted = validTrip();
+        submitted.setVersion(3L);
+        when(tripRepository.findById(existing.getId())).thenReturn(Optional.of(existing));
+
+        TripService service = new TripService(
+                tripRepository,
+                mock(PaymentRepository.class),
+                mock(SeatRepository.class),
+                mock(RoomRepository.class),
+                mock(BusRepository.class),
+                mock(UserRepository.class),
+                mock(UserService.class),
+                new ObjectMapper()
+        );
+
+        ResponseStatusException exception = assertThrows(
+                ResponseStatusException.class,
+                () -> service.atualizar(existing.getId(), submitted)
+        );
+
+        assertEquals(HttpStatus.CONFLICT, exception.getStatusCode());
+    }
+
+    private Trip validTrip() {
+        return new Trip(
+                "trip-versioned",
+                "Retiro",
+                "Goiânia",
+                "Brasília",
+                "08:00",
+                LocalDate.of(2027, 1, 20),
+                5,
+                800.0,
+                4000.0,
+                "",
+                "[]",
+                "[]",
+                "[]"
+        );
     }
 }
