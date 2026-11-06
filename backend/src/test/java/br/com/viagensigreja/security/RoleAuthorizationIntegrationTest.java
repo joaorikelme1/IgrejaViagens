@@ -137,6 +137,100 @@ class RoleAuthorizationIntegrationTest {
     }
 
     @Test
+    void onlyAdminCanManageTravelerAiPreferences() throws Exception {
+        MockHttpSession travelerSession = login(TRAVELER_CPF, "legacy-secret");
+        mockMvc.perform(get("/ai/preferences")
+                        .param("tripId", OWN_TRIP)
+                        .session(travelerSession))
+                .andExpect(status().isForbidden());
+
+        MockHttpSession adminSession = login(ADMIN_CPF, "admin-secret");
+        mockMvc.perform(put("/ai/preferences/{cpf}", TRAVELER_CPF)
+                        .param("tripId", OWN_TRIP)
+                        .session(adminSession)
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(Map.of(
+                                "mobilityRequirement", "REQUIRE_LOWER_FLOOR",
+                                "seatRegion", "FRONT",
+                                "preferredBusFloor", 1,
+                                "preferredRoomType", "Acessivel",
+                                "includeInAiPlanning", true,
+                                "companionCpfs", List.of(),
+                                "separatedFromCpfs", List.of()
+                        ))))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.userCpf").value(TRAVELER_CPF))
+                .andExpect(jsonPath("$.mobilityRequirement").value("REQUIRE_LOWER_FLOOR"));
+
+        mockMvc.perform(get("/ai/preferences")
+                        .param("tripId", OWN_TRIP)
+                        .session(adminSession))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].preferredRoomType").value("Acessivel"));
+    }
+
+    @Test
+    void administratorGeneratesLocalPlanWithoutExternalCredential() throws Exception {
+        MockHttpSession travelerSession = login(TRAVELER_CPF, "legacy-secret");
+        mockMvc.perform(post("/ai/plans")
+                        .session(travelerSession)
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"tripId":"%s","focus":"ALL"}
+                                """.formatted(OWN_TRIP)))
+                .andExpect(status().isForbidden());
+
+        userRepository.save(user(
+                COMPANION_CPF,
+                "Acompanhante",
+                passwordEncoder.encode("companion-secret"),
+                "traveler",
+                false
+        ));
+        Trip configured = tripRepository.findById(OWN_TRIP).orElseThrow();
+        configured.setBusesJson("""
+                [{"id":"bus-own","floors":1,"seats":40,"seatsFloor1":40,"seatsFloor2":0}]
+                """);
+        tripRepository.save(configured);
+
+        MockHttpSession adminSession = login(ADMIN_CPF, "admin-secret");
+        MvcResult generated = mockMvc.perform(post("/ai/plans")
+                        .session(adminSession)
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"tripId":"%s","focus":"ALL"}
+                                """.formatted(OWN_TRIP)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("GENERATED"))
+                .andExpect(jsonPath("$.provider").value("local"))
+                .andExpect(jsonPath("$.model").value("planejador-deterministico-v1"))
+                .andExpect(jsonPath("$.inputTokens").isEmpty())
+                .andExpect(jsonPath("$.outputTokens").isEmpty())
+                .andExpect(jsonPath("$.result.summary").isNotEmpty())
+                .andExpect(jsonPath("$.result.seatAssignments.length()").value(1))
+                .andReturn();
+
+        @SuppressWarnings("unchecked")
+        Map<String, Object> response = objectMapper.readValue(
+                generated.getResponse().getContentAsByteArray(),
+                Map.class
+        );
+        String planId = response.get("id").toString();
+        mockMvc.perform(post("/ai/plans/{planId}/apply", planId)
+                        .session(adminSession)
+                        .with(csrf()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.travelersAssignedToSeats").value(1));
+
+        assertEquals(2, seatRepository.findByTripId(OWN_TRIP).size());
+        assertTrue(seatRepository.findByTripId(OWN_TRIP).stream()
+                .anyMatch(seat -> COMPANION_CPF.equals(seat.getUserCpf())));
+    }
+
+    @Test
     void adminKeepsAdministrativeAccessAndBulkReplacementSemantics() throws Exception {
         MockHttpSession session = login(ADMIN_CPF, "admin-secret");
 

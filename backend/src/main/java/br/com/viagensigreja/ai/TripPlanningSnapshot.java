@@ -6,7 +6,7 @@ import br.com.viagensigreja.model.SeatRegion;
 import java.util.List;
 
 /**
- * Contrato sem identificadores pessoais para futuras integracoes de planejamento.
+ * Estado operacional minimizado usado pelo planejador automatico local.
  * Os aliases sao validos somente para o estado representado pelo snapshotHash.
  */
 public record TripPlanningSnapshot(
@@ -19,8 +19,7 @@ public record TripPlanningSnapshot(
         List<Bus> buses,
         List<Hotel> hotels,
         List<Room> rooms,
-        List<Seat> seats,
-        List<Payment> payments
+        List<Seat> seats
 ) {
     public record TripContext(
             String name,
@@ -84,13 +83,4 @@ public record TripPlanningSnapshot(
     ) {
     }
 
-    public record Payment(
-            String alias,
-            String traveler,
-            int totalInstallments,
-            int paidInstallments,
-            int dueDay,
-            boolean locked
-    ) {
-    }
 }

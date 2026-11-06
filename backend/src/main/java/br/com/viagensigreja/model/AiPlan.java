@@ -39,6 +39,9 @@ public class AiPlan {
     private String provider;
     private String model;
     private String promptVersion;
+    private String focus;
+    private String providerResponseId;
+    private String providerRequestId;
 
     @Column(nullable = false, length = 64)
     private String snapshotHash;

@@ -64,24 +64,47 @@ As operacoes de inclusao/remocao de viajante e as exclusoes globais de usuario e
 viagem sao transacionais. O backend limpa pagamentos, assentos, quartos e demais
 recursos dependentes sem depender de varias escritas do navegador.
 
-## Fundacao para planejamento com IA
+## Planejador automatico local
 
-A primeira fase da fundacao de IA nao chama nenhum modelo e nao altera
-distribuicoes. Ela adiciona versionamento otimista das viagens, preferencias
-operacionais estruturadas, metadados auditaveis para futuros planos e o
-`TripPlanningSnapshotService`.
+O planejador organiza hospedagem e transporte sem API externa, chave secreta,
+tokens ou cobranca por proposta. O algoritmo executa no backend e considera:
 
-O snapshot usa a configuracao de onibus/hoteis mantida na viagem e as tabelas de
-quartos, assentos e pagamentos como as telas atuais. Antes de sair do backend,
-CPFs e IDs operacionais sao substituidos por aliases temporarios. Nomes de
-usuarios, senhas, datas de nascimento, fotos e comprovantes nao fazem parte do
-contrato. Preferencias marcadas para nao participar do planejamento tambem sao
-omitidas. O hash SHA-256 identifica exatamente o estado analisado e permitira
-invalidar propostas quando a viagem mudar.
+- ocupacoes e assentos que ja existem;
+- capacidade real de quartos, onibus e pisos;
+- conjuges, filhos e acompanhantes registrados;
+- restricoes de separacao;
+- mobilidade, piso/regiao do assento e tipo de quarto preferido;
+- exclusao individual do planejamento automatico.
 
-As tabelas e colunas dessa fase sao criadas pela migracao
-`V4__ai_planning_foundation.sql`. Ainda nao existem endpoint, painel, chamada de
-provedor ou aplicacao de propostas; esses itens pertencem a fases posteriores.
+Quando nao existe quarto compativel, o planejador pode propor um novo quarto em
+um hotel cadastrado. Para assentos, ele prioriza familiares proximos,
+acessibilidade e preferencias, sem ocupar uma posicao duas vezes. Falta de
+capacidade vira aviso; dados invalidos nunca sao inventados.
+
+Toda proposta passa pelo `AiPlanValidator`, fica no historico e exige aprovacao
+explicita de um administrador antes da aplicacao transacional. O hash SHA-256 do
+estado da viagem impede aplicar uma proposta depois que quartos, assentos ou
+preferencias mudaram. O algoritmo usa aliases internamente; pagamentos,
+comprovantes, senhas, fotos e datas de nascimento ficam fora desse fluxo.
+
+As preferencias ficam em `/ai/preferences`, o historico em `/ai/plans` e o
+contador diario em `/ai/usage`. As migracoes `V4__ai_planning_foundation.sql`
+ate `V9__switch_to_local_planner.sql` mantem o schema e encerram com seguranca
+eventuais jobs externos de uma versao anterior.
+
+O recurso vem habilitado por padrao e pode ser ajustado somente com variaveis
+locais:
+
+```dotenv
+AI_ENABLED=true
+AI_GENERATION_COOLDOWN=5s
+AI_MAX_REQUESTS_PER_ADMIN_PER_HOUR=60
+AI_MAX_REQUESTS_PER_TRIP_PER_DAY=200
+AI_USAGE_TIME_ZONE=America/Sao_Paulo
+```
+
+Com `AI_ENABLED=false`, as demais funcoes do sistema continuam disponiveis e o
+painel informa que o planejador local foi desativado.
 
 Pagamentos, quartos e assentos possuem contratos granulares de atualizacao. O
 banco aplica unicidade por pagamento/viajante/viagem e por posicao de assento,
@@ -146,6 +169,7 @@ BOOTSTRAP_ADMIN_ENABLED=true
 ADMIN_CPF=seu-cpf-com-11-digitos
 ADMIN_NAME=Administrador
 ADMIN_PASSWORD=uma-senha-inicial-forte
+AI_ENABLED=true
 ```
 
 Depois que o administrador inicial existir, `BOOTSTRAP_ADMIN_ENABLED` pode ser

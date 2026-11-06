@@ -74,8 +74,10 @@ public class TripTravelerPreferenceService {
         target.setSeatRegion(submitted.getSeatRegion() == null
                 ? SeatRegion.ANY
                 : submitted.getSeatRegion());
-        if (submitted.getPreferredBusFloor() != null && submitted.getPreferredBusFloor() < 1) {
-            throw badRequest("O piso preferido deve ser maior que zero.");
+        if (submitted.getPreferredBusFloor() != null
+                && (submitted.getPreferredBusFloor() < 1
+                || submitted.getPreferredBusFloor() > 2)) {
+            throw badRequest("O piso preferido deve ser 1 ou 2.");
         }
         target.setPreferredBusFloor(submitted.getPreferredBusFloor());
         target.setPreferredRoomType(normalizeRoomType(submitted.getPreferredRoomType()));
