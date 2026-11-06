@@ -1,12 +1,10 @@
 package br.com.viagensigreja.ai;
 
-import br.com.viagensigreja.model.Payment;
 import br.com.viagensigreja.model.Room;
 import br.com.viagensigreja.model.Seat;
 import br.com.viagensigreja.model.Trip;
 import br.com.viagensigreja.model.TripTravelerPreference;
 import br.com.viagensigreja.model.User;
-import br.com.viagensigreja.repository.PaymentRepository;
 import br.com.viagensigreja.repository.RoomRepository;
 import br.com.viagensigreja.repository.SeatRepository;
 import br.com.viagensigreja.repository.TripRepository;
@@ -40,7 +38,6 @@ public class TripPlanningSnapshotService {
     private final UserRepository userRepository;
     private final RoomRepository roomRepository;
     private final SeatRepository seatRepository;
-    private final PaymentRepository paymentRepository;
     private final TripTravelerPreferenceRepository preferenceRepository;
     private final ObjectMapper objectMapper;
     private final PlanningDataSanitizer sanitizer;
@@ -50,7 +47,6 @@ public class TripPlanningSnapshotService {
             UserRepository userRepository,
             RoomRepository roomRepository,
             SeatRepository seatRepository,
-            PaymentRepository paymentRepository,
             TripTravelerPreferenceRepository preferenceRepository,
             ObjectMapper objectMapper,
             PlanningDataSanitizer sanitizer
@@ -59,7 +55,6 @@ public class TripPlanningSnapshotService {
         this.userRepository = userRepository;
         this.roomRepository = roomRepository;
         this.seatRepository = seatRepository;
-        this.paymentRepository = paymentRepository;
         this.preferenceRepository = preferenceRepository;
         this.objectMapper = objectMapper;
         this.sanitizer = sanitizer;
@@ -67,13 +62,17 @@ public class TripPlanningSnapshotService {
 
     @Transactional(readOnly = true)
     public TripPlanningSnapshot create(String tripId) {
+        return createContext(tripId).snapshot();
+    }
+
+    @Transactional(readOnly = true)
+    public TripPlanningContext createContext(String tripId) {
         Trip trip = tripRepository.findById(tripId).orElseThrow(() ->
                 new ResponseStatusException(HttpStatus.NOT_FOUND, "Viagem nao encontrada.")
         );
         List<String> memberCpfs = parseTravelerCpfs(trip.getTravelersJson());
         List<Room> storedRooms = roomRepository.findByTripId(tripId);
         List<Seat> storedSeats = seatRepository.findByTripId(tripId);
-        List<Payment> storedPayments = paymentRepository.findByTripId(tripId);
         List<TripTravelerPreference> storedPreferences =
                 preferenceRepository.findByTripIdOrderByUserCpfAsc(tripId);
 
@@ -81,7 +80,6 @@ public class TripPlanningSnapshotService {
         TreeSet<String> additionalCpfs = new TreeSet<>();
         storedRooms.forEach(room -> addCpfs(additionalCpfs, room.getOccupants()));
         storedSeats.forEach(seat -> addCpf(additionalCpfs, seat.getUserCpf()));
-        storedPayments.forEach(payment -> addCpf(additionalCpfs, payment.getUserCpf()));
         storedPreferences.forEach(preference -> {
             addCpf(additionalCpfs, preference.getUserCpf());
             addCpfs(additionalCpfs, preference.getCompanionCpfs());
@@ -138,7 +136,6 @@ public class TripPlanningSnapshotService {
                 personalNames
         );
         List<TripPlanningSnapshot.Seat> seats = seats(storedSeats, busAliases, travelerAliases);
-        List<TripPlanningSnapshot.Payment> payments = payments(storedPayments, travelerAliases);
 
         TripPlanningSnapshot.TripContext context = new TripPlanningSnapshot.TripContext(
                 sanitizer.sanitize(trip.getName(), 200, personalNames),
@@ -162,10 +159,9 @@ public class TripPlanningSnapshotService {
                 buses,
                 hotels,
                 rooms,
-                seats,
-                payments
+                seats
         );
-        return new TripPlanningSnapshot(
+        TripPlanningSnapshot snapshot = new TripPlanningSnapshot(
                 hash(unsigned),
                 unsigned.sourceVersion(),
                 unsigned.trip(),
@@ -175,9 +171,63 @@ public class TripPlanningSnapshotService {
                 unsigned.buses(),
                 unsigned.hotels(),
                 unsigned.rooms(),
-                unsigned.seats(),
-                unsigned.payments()
+                unsigned.seats()
         );
+        return new TripPlanningContext(
+                snapshot,
+                inverse(travelerAliases),
+                inverse(busAliases),
+                inverse(hotelAliases),
+                inverse(roomAliases),
+                travelerLabels(travelerAliases, users),
+                prefixedLabels(inverse(busAliases), "Onibus "),
+                hotelLabels(snapshot),
+                roomLabels(snapshot)
+        );
+    }
+
+    private Map<String, String> inverse(Map<String, String> aliasesByValue) {
+        Map<String, String> result = new LinkedHashMap<>();
+        aliasesByValue.forEach((value, alias) -> result.put(alias, value));
+        return result;
+    }
+
+    private Map<String, String> travelerLabels(
+            Map<String, String> aliasesByCpf,
+            Map<String, User> users
+    ) {
+        Map<String, String> result = new LinkedHashMap<>();
+        aliasesByCpf.forEach((cpf, alias) -> {
+            User user = users.get(cpf);
+            result.put(alias, user == null || user.getName() == null || user.getName().isBlank()
+                    ? alias
+                    : user.getName().trim());
+        });
+        return result;
+    }
+
+    private Map<String, String> prefixedLabels(Map<String, String> valuesByAlias, String prefix) {
+        Map<String, String> result = new LinkedHashMap<>();
+        valuesByAlias.forEach((alias, value) -> result.put(alias, prefix + value));
+        return result;
+    }
+
+    private Map<String, String> hotelLabels(TripPlanningSnapshot snapshot) {
+        Map<String, String> result = new LinkedHashMap<>();
+        snapshot.hotels().forEach(hotel -> result.put(
+                hotel.alias(),
+                hotel.name() == null || hotel.name().isBlank() ? hotel.alias() : hotel.name()
+        ));
+        return result;
+    }
+
+    private Map<String, String> roomLabels(TripPlanningSnapshot snapshot) {
+        Map<String, String> result = new LinkedHashMap<>();
+        snapshot.rooms().forEach(room -> result.put(
+                room.alias(),
+                room.name() == null || room.name().isBlank() ? room.alias() : room.name()
+        ));
+        return result;
     }
 
     private List<TripPlanningSnapshot.FamilyLink> familyLinks(
@@ -345,33 +395,6 @@ public class TripPlanningSnapshotService {
                     seat.getFloor(),
                     seat.getSeatNumber(),
                     travelerAliases.getOrDefault(normalizeCpf(seat.getUserCpf()), "traveler_unknown")
-            ));
-        }
-        return result;
-    }
-
-    private List<TripPlanningSnapshot.Payment> payments(
-            List<Payment> stored,
-            Map<String, String> travelerAliases
-    ) {
-        List<Payment> sorted = stored.stream()
-                .sorted(Comparator.comparing(
-                        (Payment payment) -> travelerAliases.getOrDefault(
-                                normalizeCpf(payment.getUserCpf()),
-                                "traveler_unknown"
-                        )
-                ).thenComparing(Payment::getId, Comparator.nullsFirst(String::compareTo)))
-                .toList();
-        List<TripPlanningSnapshot.Payment> result = new ArrayList<>();
-        for (int index = 0; index < sorted.size(); index++) {
-            Payment payment = sorted.get(index);
-            result.add(new TripPlanningSnapshot.Payment(
-                    alias("payment", index),
-                    travelerAliases.getOrDefault(normalizeCpf(payment.getUserCpf()), "traveler_unknown"),
-                    payment.getTotalInstallments(),
-                    payment.getPaidInstallments(),
-                    payment.getDueDay(),
-                    payment.isLocked()
             ));
         }
         return result;

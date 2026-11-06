@@ -50,6 +50,14 @@ export const navigationByRole: Record<UserRole, NavigationSection[]> = {
       label: 'Gestão',
       items: [
         {
+          label: 'Planejador',
+          path: '/admin/assistente',
+          icon: 'sparkles',
+          pageTitle: 'Assistente de planejamento',
+          description: 'Propostas revisáveis para quartos e assentos da viagem ativa.',
+          requiresTrip: true,
+        },
+        {
           label: 'Pagamentos',
           path: '/admin/pagamentos',
           icon: 'creditCard',
