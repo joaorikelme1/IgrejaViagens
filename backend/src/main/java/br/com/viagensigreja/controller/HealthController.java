@@ -15,9 +15,12 @@ public class HealthController {
         this.jdbcTemplate = jdbcTemplate;
     }
 
-    @GetMapping("/health")
+    @GetMapping({"/", "/health"})
     public Map<String, String> health() {
         jdbcTemplate.queryForObject("SELECT 1", Integer.class);
-        return Map.of("status", "UP");
+        return Map.of(
+                "status", "UP",
+                "message", "Aplicação funcionando"
+        );
     }
 }

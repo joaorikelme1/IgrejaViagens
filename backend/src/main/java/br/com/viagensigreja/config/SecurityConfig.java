@@ -92,7 +92,7 @@ public class SecurityConfig {
                 )
                 .authorizeHttpRequests(authorize -> authorize
                         .requestMatchers(HttpMethod.POST, "/auth/login", "/auth/logout").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/auth/csrf", "/health").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/", "/auth/csrf", "/health").permitAll()
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         .requestMatchers("/error").permitAll()
                         // As regras de perfil e propriedade ficam nos controllers via method security.

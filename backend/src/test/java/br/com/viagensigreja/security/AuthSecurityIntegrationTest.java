@@ -135,6 +135,19 @@ class AuthSecurityIntegrationTest {
     }
 
     @Test
+    void raizEHealthSaoPublicosEIndicamAplicacaoDisponivel() throws Exception {
+        mockMvc.perform(get("/"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("UP"))
+                .andExpect(jsonPath("$.message").value("Aplicação funcionando"));
+
+        mockMvc.perform(get("/health"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("UP"))
+                .andExpect(jsonPath("$.message").value("Aplicação funcionando"));
+    }
+
+    @Test
     void csrfTokenPublicoProtegeOperacoesDeEscrita() throws Exception {
         mockMvc.perform(get("/auth/csrf"))
                 .andExpect(status().isOk())
