@@ -25,3 +25,13 @@ services:
         value: Administrador
       - key: ADMIN_PASSWORD
         sync: false
+      - key: AI_ENABLED
+        value: "true"
+      - key: AI_GENERATION_COOLDOWN
+        value: 5s
+      - key: AI_MAX_REQUESTS_PER_ADMIN_PER_HOUR
+        value: "60"
+      - key: AI_MAX_REQUESTS_PER_TRIP_PER_DAY
+        value: "200"
+      - key: AI_USAGE_TIME_ZONE
+        value: America/Sao_Paulo

@@ -26,6 +26,11 @@ services:
       ADMIN_CPF: ${ADMIN_CPF:-10127544135}
       ADMIN_NAME: ${ADMIN_NAME:-Administrador}
       ADMIN_PASSWORD: ${ADMIN_PASSWORD:?Defina ADMIN_PASSWORD no arquivo .env}
+      AI_ENABLED: ${AI_ENABLED:-true}
+      AI_GENERATION_COOLDOWN: ${AI_GENERATION_COOLDOWN:-5s}
+      AI_MAX_REQUESTS_PER_ADMIN_PER_HOUR: ${AI_MAX_REQUESTS_PER_ADMIN_PER_HOUR:-60}
+      AI_MAX_REQUESTS_PER_TRIP_PER_DAY: ${AI_MAX_REQUESTS_PER_TRIP_PER_DAY:-200}
+      AI_USAGE_TIME_ZONE: ${AI_USAGE_TIME_ZONE:-America/Sao_Paulo}
     depends_on:
       db:
         condition: service_healthy

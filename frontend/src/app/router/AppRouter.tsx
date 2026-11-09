@@ -1,6 +1,7 @@
 import { Route, Routes } from 'react-router'
 import { AdminDashboardPage } from '../../features/admin/dashboard/pages/AdminDashboardPage'
 import { TripSettingsPage } from '../../features/admin/settings/pages/TripSettingsPage'
+import { AiPlanningPage } from '../../features/ai/pages/AiPlanningPage'
 import { TravelerDashboardPage } from '../../features/traveler/dashboard/pages/TravelerDashboardPage'
 import { BusManagementPage } from '../../features/operations/pages/BusManagementPage'
 import { HotelManagementPage } from '../../features/operations/pages/HotelManagementPage'
@@ -40,6 +41,10 @@ export function AppRouter() {
           <Route
             path="/admin/hotel"
             element={<HotelManagementPage />}
+          />
+          <Route
+            path="/admin/assistente"
+            element={<AiPlanningPage />}
           />
           <Route
             path="/admin/cadastros"

@@ -1,14 +1,12 @@
 package br.com.viagensigreja.ai;
 
 import br.com.viagensigreja.model.MobilityRequirement;
-import br.com.viagensigreja.model.Payment;
 import br.com.viagensigreja.model.Room;
 import br.com.viagensigreja.model.Seat;
 import br.com.viagensigreja.model.SeatRegion;
 import br.com.viagensigreja.model.Trip;
 import br.com.viagensigreja.model.TripTravelerPreference;
 import br.com.viagensigreja.model.User;
-import br.com.viagensigreja.repository.PaymentRepository;
 import br.com.viagensigreja.repository.RoomRepository;
 import br.com.viagensigreja.repository.SeatRepository;
 import br.com.viagensigreja.repository.TripRepository;
@@ -41,7 +39,6 @@ class TripPlanningSnapshotServiceTest {
         UserRepository userRepository = mock(UserRepository.class);
         RoomRepository roomRepository = mock(RoomRepository.class);
         SeatRepository seatRepository = mock(SeatRepository.class);
-        PaymentRepository paymentRepository = mock(PaymentRepository.class);
         TripTravelerPreferenceRepository preferenceRepository =
                 mock(TripTravelerPreferenceRepository.class);
 
@@ -53,10 +50,6 @@ class TripPlanningSnapshotServiceTest {
                 List.of(FIRST_CPF), trip.getId()
         );
         Seat seat = new Seat("seat-real", trip.getId(), "bus-real", 1, 1, FIRST_CPF);
-        Payment payment = new Payment(
-                "payment-real", FIRST_CPF, trip.getId(), 5, 2, 10, false,
-                "{\"privateReceipt\":\"" + FIRST_CPF + "\"}"
-        );
         TripTravelerPreference preference = new TripTravelerPreference();
         preference.setId("preference-real");
         preference.setTripId(trip.getId());
@@ -72,7 +65,6 @@ class TripPlanningSnapshotServiceTest {
         when(userRepository.findAllById(any())).thenReturn(List.of(first, second));
         when(roomRepository.findByTripId(trip.getId())).thenReturn(List.of(room));
         when(seatRepository.findByTripId(trip.getId())).thenReturn(List.of(seat));
-        when(paymentRepository.findByTripId(trip.getId())).thenReturn(List.of(payment));
         when(preferenceRepository.findByTripIdOrderByUserCpfAsc(trip.getId()))
                 .thenReturn(List.of(preference));
 
@@ -82,7 +74,6 @@ class TripPlanningSnapshotServiceTest {
                 userRepository,
                 roomRepository,
                 seatRepository,
-                paymentRepository,
                 preferenceRepository,
                 objectMapper,
                 new PlanningDataSanitizer()
@@ -108,6 +99,8 @@ class TripPlanningSnapshotServiceTest {
         assertFalse(json.contains("Bruno Segredo"));
         assertFalse(json.contains("Quarto Ana"));
         assertTrue(json.contains("[NOME_REMOVIDO]"));
+        assertFalse(json.contains("paidInstallments"));
+        assertFalse(json.contains("payments"));
         assertFalse(json.contains("privateReceipt"));
     }
 
@@ -117,7 +110,6 @@ class TripPlanningSnapshotServiceTest {
         UserRepository userRepository = mock(UserRepository.class);
         RoomRepository roomRepository = mock(RoomRepository.class);
         SeatRepository seatRepository = mock(SeatRepository.class);
-        PaymentRepository paymentRepository = mock(PaymentRepository.class);
         TripTravelerPreferenceRepository preferenceRepository =
                 mock(TripTravelerPreferenceRepository.class);
         Trip trip = trip();
@@ -132,7 +124,6 @@ class TripPlanningSnapshotServiceTest {
         when(userRepository.findAllById(any())).thenReturn(List.of());
         when(roomRepository.findByTripId(trip.getId())).thenReturn(List.of());
         when(seatRepository.findByTripId(trip.getId())).thenReturn(List.of());
-        when(paymentRepository.findByTripId(trip.getId())).thenReturn(List.of());
         when(preferenceRepository.findByTripIdOrderByUserCpfAsc(trip.getId()))
                 .thenReturn(List.of(preference));
 
@@ -141,7 +132,6 @@ class TripPlanningSnapshotServiceTest {
                 userRepository,
                 roomRepository,
                 seatRepository,
-                paymentRepository,
                 preferenceRepository,
                 new ObjectMapper(),
                 new PlanningDataSanitizer()
