@@ -1,16 +1,7 @@
-import { httpRequest } from '../../../lib/http'
+import { supabase, unwrap } from '../../../infrastructure/supabase/client'
 import type { Trip } from '../model/tripTypes'
 
-/**
- * A exclusão e a limpeza dos recursos dependentes são uma transação única no
- * backend. A lista local só é alterada depois da confirmação HTTP.
- */
-export async function deleteTripWithCompatibility(
-  trips: Trip[],
-  tripId: string,
-) {
-  await httpRequest<null>(`/trips/${encodeURIComponent(tripId)}`, {
-    method: 'DELETE',
-  })
+export async function deleteTripWithCompatibility(trips: Trip[], tripId: string) {
+  unwrap(await supabase.from('trips').delete().eq('id', tripId))
   return trips.filter((trip) => trip.id !== tripId)
 }

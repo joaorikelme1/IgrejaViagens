@@ -1,277 +1,74 @@
-import { httpRequest } from '../../../lib/http'
-import { stripCpf } from '../../../shared/validation/cpf'
+import { supabase, unwrap } from '../../../infrastructure/supabase/client'
 import type { BusConfig } from '../../trips/model/tripTypes'
 import { listUsers } from '../../users/api/usersApi'
-import type {
-  HotelConfig,
-  HotelSource,
-  RoomRecord,
-  SeatRecord,
-  TransportSource,
-} from '../model/operationTypes'
+import type { HotelConfig, HotelSource, RoomRecord, SeatRecord, TransportSource } from '../model/operationTypes'
 
-type ApiRecord = Record<string, unknown>
-
-function records(value: unknown, label: string): ApiRecord[] {
-  if (!Array.isArray(value)) throw new Error(`Resposta de ${label} inválida.`)
-  return value.filter(
-    (item): item is ApiRecord =>
-      typeof item === 'object' && item !== null && !Array.isArray(item),
-  )
-}
-
-function readString(value: unknown, fallback = '') {
-  return typeof value === 'string' || typeof value === 'number'
-    ? String(value)
-    : fallback
-}
-
-function readNumber(value: unknown) {
-  const parsed = Number(value)
-  return Number.isFinite(parsed) ? parsed : 0
-}
-
-function parseOccupants(value: unknown) {
-  return Array.isArray(value)
-    ? [...new Set(
-        value
-          .filter((item): item is string => typeof item === 'string')
-          .map(stripCpf)
-          .filter(Boolean),
-      )]
-    : []
-}
+const text = (value: unknown, fallback = '') => typeof value === 'string' || typeof value === 'number' ? String(value) : fallback
+const number = (value: unknown) => Number.isFinite(Number(value)) ? Number(value) : 0
 
 export function toRoom(value: unknown, index = 0): RoomRecord | null {
-  if (typeof value !== 'object' || value === null || Array.isArray(value)) {
-    return null
-  }
-  const source = value as ApiRecord
-  const tripId = readString(source.tripId)
+  if (!value || typeof value !== 'object') return null
+  const room = value as Record<string, unknown>
+  const tripId = text(room.trip_id ?? room.tripId)
   if (!tripId) return null
-  const id = readString(source.id, `room_missing_id_${index + 1}`)
-  return {
-    capacity: Math.max(0, Math.trunc(readNumber(source.capacity))),
-    hotelId: readString(source.hotelId),
-    id,
-    name: readString(source.name, id),
-    occupants: parseOccupants(source.occupants),
-    tripId,
-    type: readString(source.type, 'custom'),
-  }
+  const occupants = Array.isArray(room.room_occupants) ? room.room_occupants.flatMap((item) => { const profile = (item as { profiles?: { cpf?: string } }).profiles; return profile?.cpf ? [profile.cpf] : [] }) : (Array.isArray(room.occupants) ? room.occupants.map((item) => text(item)) : [])
+  return { id: text(room.id, `room-${index}`), tripId, hotelId: text(room.hotel_id ?? room.hotelId), name: text(room.name), type: text(room.room_type ?? room.type, 'custom'), capacity: number(room.capacity), occupants }
 }
 
 export function toSeat(value: unknown, index = 0): SeatRecord | null {
-  if (typeof value !== 'object' || value === null || Array.isArray(value)) {
-    return null
-  }
-  const source = value as ApiRecord
-  const tripId = readString(source.tripId)
-  const busId = readString(source.busId)
+  if (!value || typeof value !== 'object') return null
+  const seat = value as Record<string, unknown>
+  const tripId = text(seat.trip_id ?? seat.tripId); const busId = text(seat.bus_id ?? seat.busId)
   if (!tripId || !busId) return null
-  return {
-    busId,
-    floor: Math.trunc(readNumber(source.floor)),
-    id: readString(source.id, `seat_missing_id_${index + 1}`),
-    seatNumber: Math.trunc(readNumber(source.seatNumber)),
-    tripId,
-    userCpf: stripCpf(readString(source.userCpf, readString(source.cpf))),
-  }
+  return { id: text(seat.id, `seat-${index}`), tripId, busId, floor: number(seat.floor), seatNumber: number(seat.seat_number ?? seat.seatNumber), userCpf: text((seat.profiles as { cpf?: string } | null)?.cpf ?? seat.userCpf) }
 }
 
-async function updateTripArray(
-  tripId: string,
-  field: 'busesJson' | 'hotelsJson',
-  value: BusConfig[] | HotelConfig[],
-) {
-  const current = records(await httpRequest<unknown>('/trips'), 'viagens')
-  const targetIndex = current.findIndex((trip) => trip.id === tripId)
-  if (targetIndex < 0) throw new Error('Viagem não encontrada.')
-  const updated = {
-    ...current[targetIndex],
-    [field]: JSON.stringify(value),
-  }
-  const saved = await httpRequest<Record<string, unknown>>(
-    `/trips/${encodeURIComponent(tripId)}`,
-    {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(updated),
-    },
-  )
-  if (!saved || typeof saved[field] !== 'string') {
-    throw new Error('O backend não confirmou a atualização da viagem.')
-  }
-  try {
-    const parsed: unknown = JSON.parse(saved[field])
-    if (!Array.isArray(parsed)) throw new Error()
-    if (JSON.stringify(parsed) !== JSON.stringify(value)) {
-      throw new Error()
-    }
-  } catch {
-    throw new Error('O backend não confirmou a configuração solicitada.')
-  }
+export async function saveHotelStructure(tripId: string, hotels: HotelConfig[]) {
+  unwrap(await supabase.rpc('replace_hotels', { p_trip_id: tripId, p_hotels: hotels.map((hotel) => ({ name: hotel.name, rooms: hotel.rooms.map((room) => ({ name: room.name, room_type: room.type, capacity: room.capacity })) })) }))
 }
 
-export function saveHotelStructure(tripId: string, hotels: HotelConfig[]) {
-  return updateTripArray(tripId, 'hotelsJson', hotels)
-}
-
-export function saveBusStructure(tripId: string, buses: BusConfig[]) {
-  return updateTripArray(tripId, 'busesJson', buses)
+export async function saveBusStructure(tripId: string, buses: BusConfig[]) {
+  unwrap(await supabase.rpc('replace_buses', { p_trip_id: tripId, p_buses: buses.map((bus) => ({ floors: bus.floors, seats_floor1: bus.seatsFloor1, seats_floor2: bus.seatsFloor2 })) }))
 }
 
 export async function loadHotelSource(tripId: string): Promise<HotelSource> {
-  const [roomsValue, users] = await Promise.all([
-    httpRequest<unknown>('/rooms'),
-    listUsers(),
-  ])
-  const rooms = records(roomsValue, 'quartos')
-    .map(toRoom)
-    .filter((room): room is RoomRecord => room !== null && room.tripId === tripId)
-  return { rooms, users }
+  const value = unwrap<unknown[]>(await supabase.from('rooms').select('id, trip_id, hotel_id, name, room_type, capacity, room_occupants(profiles(cpf))').eq('trip_id', tripId))
+  const users = await listUsers()
+  return { rooms: value.map(toRoom).filter((room): room is RoomRecord => room !== null), users }
 }
 
 export async function saveRoomRecord(room: RoomRecord) {
-  const normalized = {
-    capacity: Math.max(1, Math.trunc(room.capacity) || 1),
-    hotelId: room.hotelId,
-    id: room.id,
-    name: room.name,
-    occupants: [...new Set(room.occupants.map(stripCpf).filter(Boolean))],
-    tripId: room.tripId,
-    type: room.type,
-  }
-  const persisted = await httpRequest<unknown>(
-    `/rooms/${encodeURIComponent(room.id)}`,
-    {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(normalized),
-    },
-  )
-  const saved = toRoom(persisted)
-  if (
-    !saved ||
-    saved.tripId !== normalized.tripId ||
-    saved.hotelId !== normalized.hotelId ||
-    saved.name !== normalized.name ||
-    saved.type !== normalized.type ||
-    saved.capacity !== normalized.capacity ||
-    JSON.stringify([...saved.occupants].sort()) !==
-      JSON.stringify([...normalized.occupants].sort())
-  ) {
-    throw new Error('O backend não confirmou o quarto persistido.')
-  }
-  return saved
+  const row = unwrap<{ id: string }>(await supabase.from('rooms').upsert({ id: room.id, trip_id: room.tripId, hotel_id: room.hotelId, name: room.name, room_type: room.type, capacity: room.capacity }).select('id, trip_id, hotel_id, name, room_type, capacity').single())
+  await saveTripRoomAssignments(room.tripId, [{ ...room, id: row.id }])
+  return { ...room, id: row.id }
 }
 
 export async function saveTripRoomAssignments(tripId: string, rooms: RoomRecord[]) {
-  const persisted = await httpRequest<unknown>(
-    `/rooms/trip/${encodeURIComponent(tripId)}/bulk`,
-    {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(rooms),
-    },
-  )
-  const saved = records(persisted, 'quartos')
-    .map(toRoom)
-    .filter((room): room is RoomRecord => room !== null && room.tripId === tripId)
-  if (saved.length !== rooms.length) {
-    throw new Error('O backend não confirmou toda a distribuição dos quartos.')
-  }
-  return saved
+  const profiles = unwrap<{ id: string; cpf: string }[]>(await supabase.from('profiles').select('id, cpf').in('cpf', [...new Set(rooms.flatMap((room) => room.occupants))]))
+  const idByCpf = new Map(profiles.map((profile) => [profile.cpf, profile.id]))
+  unwrap(await supabase.rpc('replace_room_assignments', { p_trip_id: tripId, p_rooms: rooms.map((room) => ({ id: room.id, occupants: room.occupants.map((cpf) => idByCpf.get(cpf)).filter(Boolean) })) }))
+  return rooms
 }
 
-export async function deleteRoomRecords(tripId: string, roomIds: string[]) {
-  await Promise.all(
-    [...new Set(roomIds)].map((id) =>
-      httpRequest<unknown>(
-        `/rooms/${encodeURIComponent(id)}?tripId=${encodeURIComponent(tripId)}`,
-        { method: 'DELETE' },
-      ),
-    ),
-  )
+export async function deleteRoomRecords(_tripId: string, roomIds: string[]) { if (roomIds.length) unwrap(await supabase.from('rooms').delete().in('id', [...new Set(roomIds)])) }
+
+export async function loadTransportSource(tripId: string): Promise<TransportSource> {
+  const value = unwrap<unknown[]>(await supabase.from('seat_assignments').select('id, trip_id, bus_id, floor, seat_number, profiles(cpf)').eq('trip_id', tripId))
+  const users = await listUsers()
+  return { seats: value.map(toSeat).filter((seat): seat is SeatRecord => seat !== null), users }
 }
 
-export async function loadTransportSource(
-  tripId: string,
-): Promise<TransportSource> {
-  const [seatsValue, users] = await Promise.all([
-    httpRequest<unknown>('/seats'),
-    listUsers(),
-  ])
-  const seats = records(seatsValue, 'assentos')
-    .map(toSeat)
-    .filter((seat): seat is SeatRecord => seat !== null && seat.tripId === tripId)
-  return { seats, users }
-}
-
-export async function saveSeatRecord(seat: SeatRecord) {
-  const normalized = {
-    busId: seat.busId,
-    floor: seat.floor,
-    id: seat.id,
-    seatNumber: seat.seatNumber,
-    tripId: seat.tripId,
-    userCpf: stripCpf(seat.userCpf),
-  }
-  const persisted = await httpRequest<unknown>(
-    `/seats/${encodeURIComponent(seat.id)}`,
-    {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(normalized),
-    },
-  )
-  const saved = toSeat(persisted)
-  if (
-    !saved ||
-    saved.tripId !== normalized.tripId ||
-    saved.busId !== normalized.busId ||
-    saved.floor !== normalized.floor ||
-    saved.seatNumber !== normalized.seatNumber ||
-    saved.userCpf !== normalized.userCpf
-  ) {
-    throw new Error('O backend não confirmou o assento persistido.')
-  }
-  return saved
-}
+export async function saveSeatRecord(seat: SeatRecord) { const rows = await saveTripSeatAssignments(seat.tripId, [seat]); return rows[0] }
 
 export async function saveTripSeatAssignments(tripId: string, seats: SeatRecord[]) {
-  const persisted = await httpRequest<unknown>(
-    `/seats/trip/${encodeURIComponent(tripId)}/bulk`,
-    {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(seats),
-    },
-  )
-  const saved = records(persisted, 'assentos')
-    .map(toSeat)
-    .filter((seat): seat is SeatRecord => seat !== null && seat.tripId === tripId)
-  if (saved.length !== seats.length) {
-    throw new Error('O backend não confirmou toda a distribuição dos assentos.')
-  }
-  return saved
+  const profiles = unwrap<{ id: string; cpf: string }[]>(await supabase.from('profiles').select('id, cpf').in('cpf', [...new Set(seats.map((seat) => seat.userCpf))]))
+  const idByCpf = new Map(profiles.map((profile) => [profile.cpf, profile.id]))
+  unwrap(await supabase.rpc('replace_seat_assignments', { p_trip_id: tripId, p_seats: seats.map((seat) => ({ busId: seat.busId, floor: seat.floor, seatNumber: seat.seatNumber, travelerId: idByCpf.get(seat.userCpf) })) }))
+  return seats
 }
 
-export async function deleteSeats(
-  tripId: string,
-  predicate: (seat: SeatRecord) => boolean,
-) {
-  const current = records(await httpRequest<unknown>('/seats'), 'assentos')
-  const targets = current.flatMap((item, index) => {
-    const parsed = toSeat(item, index)
-    return parsed?.tripId === tripId && predicate(parsed) ? [parsed.id] : []
-  })
-  await Promise.all(
-    targets.map((id) =>
-      httpRequest<unknown>(
-        `/seats/${encodeURIComponent(id)}?tripId=${encodeURIComponent(tripId)}`,
-        { method: 'DELETE' },
-      ),
-    ),
-  )
+export async function deleteSeats(tripId: string, predicate: (seat: SeatRecord) => boolean) {
+  const current = await loadTransportSource(tripId)
+  const remaining = current.seats.filter((seat) => !predicate(seat))
+  await saveTripSeatAssignments(tripId, remaining)
 }

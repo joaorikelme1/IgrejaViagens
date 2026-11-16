@@ -1,0 +1,19 @@
+project_id = "igreja-viagens"
+
+[api]
+enabled = true
+
+[auth]
+site_url = "http://localhost:5173"
+additional_redirect_urls = ["http://localhost:5173", "https://*.vercel.app"]
+
+[auth.email]
+enable_confirmations = false
+
+[functions.provision-user]
+# O bootstrap inicial não tem JWT; a função valida o segredo e limita esse
+# caminho ao banco sem perfis. Todas as demais chamadas validam o JWT e ADMIN.
+verify_jwt = false
+
+[storage]
+enabled = true

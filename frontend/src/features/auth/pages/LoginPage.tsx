@@ -1,5 +1,4 @@
 import { useState, type FormEvent } from 'react'
-import { ApiError } from '../../../lib/http'
 import { isValidCpf, maskCpf, stripCpf } from '../../../shared/validation/cpf'
 import { login } from '../api/authApi'
 import { AuthIcon } from '../components/AuthIcon'
@@ -12,10 +11,6 @@ interface LoginPageProps {
 }
 
 function getLoginError(error: unknown) {
-  if (error instanceof ApiError && error.status === 401) {
-    return 'CPF ou senha incorretos.'
-  }
-
   if (error instanceof DOMException && error.name === 'AbortError') {
     return 'A conexão demorou demais. Tente novamente.'
   }

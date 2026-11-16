@@ -1,124 +1,45 @@
-import { cleanup, render, screen, waitFor } from '@testing-library/react'
-import userEvent from '@testing-library/user-event'
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { httpRequest } from '../../../lib/http'
-import {
-  readActiveTripId,
-  writeActiveTripId,
-} from '../../trips/storage/activeTripStorage'
+import { render, screen } from '@testing-library/react'
+import { describe, expect, it, vi } from 'vitest'
 import { useAuth } from '../hooks/useAuth'
-import type { AuthUser } from '../model/authTypes'
 import { AuthProvider } from './AuthProvider'
 
-const authenticatedUser: AuthUser = {
-  cpf: '52998224725',
-  name: 'Ana Administradora',
-  role: 'admin',
-  birthdate: '',
-  firstLogin: false,
-  married: false,
-  spouseName: '',
-  hasKids: false,
-  kids: [],
-}
+const mocks = vi.hoisted(() => ({
+  getUser: vi.fn(),
+  onAuthStateChange: vi.fn(),
+  from: vi.fn(),
+}))
 
-function jsonResponse(body: unknown, status = 200) {
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: { 'Content-Type': 'application/json' },
+vi.mock('../../../infrastructure/supabase/client', () => ({
+  supabase: {
+    auth: { getUser: mocks.getUser, onAuthStateChange: mocks.onAuthStateChange },
+    from: mocks.from,
+  },
+  unwrap: <T,>(result: { data?: T; error: { message: string } | null }) => {
+    if (result.error) throw new Error(result.error.message)
+    return result.data as T
+  },
+}))
+
+function profileQuery() {
+  const response = Promise.resolve({
+    data: { id: '00000000-0000-4000-8000-000000000001', cpf: '52998224725', name: 'Ana Administradora', role: 'admin', birthdate: null, first_login: false, married: false, spouse_name: '', has_kids: false, profile_photo_path: null },
+    error: null,
   })
+  const query = { select: () => query, eq: () => query, single: () => query, then: response.then.bind(response) }
+  return query
 }
 
-function AuthProbe() {
+function Probe() {
   const { user } = useAuth()
-
-  return (
-    <div>
-      <span>{user ? `Autenticado: ${user.name}` : 'Deslogado'}</span>
-      <button
-        onClick={() => {
-          void httpRequest('/trips').catch(() => undefined)
-        }}
-        type="button"
-      >
-        Carregar recurso protegido
-      </button>
-    </div>
-  )
+  return <span>{user?.name ?? 'Deslogado'}</span>
 }
 
-describe('AuthProvider', () => {
-  const fetchMock = vi.fn<typeof fetch>()
-
-  beforeEach(() => {
-    sessionStorage.clear()
-    fetchMock.mockReset()
-    vi.stubGlobal('fetch', fetchMock)
-  })
-
-  afterEach(() => {
-    cleanup()
-    vi.unstubAllGlobals()
-  })
-
-  it('consulta /auth/me, mantém loading e carrega a sessão autenticada', async () => {
-    fetchMock.mockResolvedValueOnce(jsonResponse(authenticatedUser))
-
-    render(
-      <AuthProvider>
-        <AuthProbe />
-      </AuthProvider>,
-    )
-
-    expect(screen.getByRole('status')).toHaveTextContent('Verificando sessão')
-    expect(
-      await screen.findByText('Autenticado: Ana Administradora'),
-    ).toBeInTheDocument()
-    expect(fetchMock).toHaveBeenCalledWith(
-      '/auth/me',
-      expect.objectContaining({ credentials: 'include' }),
-    )
-  })
-
-  it('considera o usuário deslogado quando /auth/me retorna 401', async () => {
-    writeActiveTripId('trip-anterior')
-    sessionStorage.setItem(
-      'igreja-viagens:auth-session',
-      JSON.stringify(authenticatedUser),
-    )
-    fetchMock.mockResolvedValueOnce(new Response(null, { status: 401 }))
-
-    render(
-      <AuthProvider>
-        <AuthProbe />
-      </AuthProvider>,
-    )
-
-    expect(await screen.findByText('Deslogado')).toBeInTheDocument()
-    expect(readActiveTripId()).toBeNull()
-    expect(sessionStorage.getItem('igreja-viagens:auth-session')).toBeNull()
-  })
-
-  it('limpa autenticação e viagem ativa após 401 de recurso protegido', async () => {
-    writeActiveTripId('trip-ativa')
-    fetchMock
-      .mockResolvedValueOnce(jsonResponse(authenticatedUser))
-      .mockResolvedValueOnce(new Response(null, { status: 401 }))
-
-    render(
-      <AuthProvider>
-        <AuthProbe />
-      </AuthProvider>,
-    )
-
-    expect(
-      await screen.findByText('Autenticado: Ana Administradora'),
-    ).toBeInTheDocument()
-    await userEvent.click(
-      screen.getByRole('button', { name: 'Carregar recurso protegido' }),
-    )
-
-    await waitFor(() => expect(screen.getByText('Deslogado')).toBeInTheDocument())
-    expect(readActiveTripId()).toBeNull()
+describe('AuthProvider com Supabase', () => {
+  it('carrega o perfil associado à sessão Supabase', async () => {
+    mocks.getUser.mockResolvedValue({ data: { user: { id: '00000000-0000-4000-8000-000000000001' } }, error: null })
+    mocks.from.mockReturnValue(profileQuery())
+    mocks.onAuthStateChange.mockReturnValue({ data: { subscription: { unsubscribe: vi.fn() } } })
+    render(<AuthProvider><Probe /></AuthProvider>)
+    expect(await screen.findByText('Ana Administradora')).toBeInTheDocument()
   })
 })
