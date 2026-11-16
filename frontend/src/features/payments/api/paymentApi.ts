@@ -1,146 +1,49 @@
-import { httpRequest } from '../../../lib/http'
+import { supabase, unwrap } from '../../../infrastructure/supabase/client'
 import { stripCpf } from '../../../shared/validation/cpf'
 import { listUsers } from '../../users/api/usersApi'
-import type {
-  PaymentMutation,
-  PaymentReceipt,
-  PaymentRecord,
-  PaymentSource,
-  ReceiptStatus,
-} from '../model/paymentTypes'
+import type { PaymentMutation, PaymentReceipt, PaymentRecord, PaymentSource, ReceiptStatus } from '../model/paymentTypes'
 
-type ApiRecord = Record<string, unknown>
+type PaymentRow = { id: string; trip_id: string; traveler_id: string; total_installments: number; paid_installments: number; due_day: number; locked: boolean; payment_receipts: { installment: number; storage_path: string; file_name: string; mime_type: string; note: string; status: ReceiptStatus; uploaded_at: string }[]; profiles: { cpf: string } | null }
 
-function records(value: unknown, label: string): ApiRecord[] {
-  if (!Array.isArray(value)) throw new Error(`Resposta de ${label} inválida.`)
-  return value.filter(
-    (item): item is ApiRecord =>
-      typeof item === 'object' && item !== null && !Array.isArray(item),
-  )
+async function signed(path: string) {
+  const result = unwrap<{ signedUrl: string } | null>(await supabase.storage.from('payment-receipts').createSignedUrl(path, 60 * 10))
+  if (!result) throw new Error('Não foi possível gerar a URL do comprovante.')
+  return result.signedUrl
 }
 
-function readString(value: unknown, fallback = '') {
-  return typeof value === 'string' || typeof value === 'number'
-    ? String(value)
-    : fallback
-}
-
-function readNumber(value: unknown) {
-  const parsed = Number(value)
-  return Number.isFinite(parsed) ? parsed : 0
-}
-
-function readStatus(value: unknown): ReceiptStatus {
-  if (value === 'approved' || value === 'rejected') return value
-  return 'pending'
-}
-
-function parseReceipts(value: unknown) {
-  if (typeof value !== 'string' || !value.trim()) return {}
-
-  try {
-    const parsed: unknown = JSON.parse(value)
-    if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) {
-      return {}
-    }
-
-    return Object.fromEntries(
-      Object.entries(parsed).flatMap(([installment, receipt]) => {
-        if (
-          typeof receipt !== 'object' ||
-          receipt === null ||
-          Array.isArray(receipt)
-        ) {
-          return []
-        }
-        const source = receipt as ApiRecord
-        const parsedReceipt: PaymentReceipt = {
-          data: readString(source.data),
-          date: readString(source.date),
-          filename: readString(
-            source.filename,
-            readString(source.fileName, 'Comprovante'),
-          ),
-          note: readString(source.note),
-          status: readStatus(source.status),
-          type: readString(source.type),
-        }
-        return [[installment, parsedReceipt]]
-      }),
-    )
-  } catch {
-    return {}
-  }
-}
-
-export function toPayment(value: unknown): PaymentRecord | null {
-  if (typeof value !== 'object' || value === null || Array.isArray(value)) {
-    return null
-  }
-  const source = value as ApiRecord
-  const userCpf = stripCpf(
-    readString(source.userCpf, readString(source.cpf)),
-  )
-  const tripId = readString(source.tripId)
-  if (!userCpf || !tripId) return null
-
-  return {
-    dueDay: readNumber(source.dueDay),
-    id: readString(source.id, `${userCpf}_${tripId}`),
-    locked: source.locked === true,
-    paidInstallments: readNumber(source.paidInstallments),
-    receipts: parseReceipts(source.receiptsJson),
-    totalInstallments: readNumber(source.totalInstallments),
-    tripId,
-    userCpf,
-  }
+async function toPayment(row: PaymentRow): Promise<PaymentRecord> {
+  const entries = await Promise.all((row.payment_receipts ?? []).map(async (receipt) => [String(receipt.installment), { data: await signed(receipt.storage_path), date: receipt.uploaded_at, filename: receipt.file_name, note: receipt.note, status: receipt.status, type: receipt.mime_type }] as const))
+  return { id: row.id, tripId: row.trip_id, userCpf: row.profiles?.cpf ?? '', totalInstallments: row.total_installments, paidInstallments: row.paid_installments, dueDay: row.due_day, locked: row.locked, receipts: Object.fromEntries(entries) }
 }
 
 export async function listPayments() {
-  const response = await httpRequest<unknown>('/payments')
-  return records(response, 'pagamentos')
-    .map(toPayment)
-    .filter((payment): payment is PaymentRecord => payment !== null)
+  const rows = unwrap<PaymentRow[]>(await supabase.from('payments').select('id, trip_id, traveler_id, total_installments, paid_installments, due_day, locked, profiles(cpf), payment_receipts(installment,storage_path,file_name,mime_type,note,status,uploaded_at)').order('created_at'))
+  return Promise.all(rows.map(toPayment))
 }
 
-export async function loadPaymentSource(): Promise<PaymentSource> {
-  const [payments, users] = await Promise.all([listPayments(), listUsers()])
-  return { payments, users }
-}
+export async function loadPaymentSource(): Promise<PaymentSource> { const [payments, users] = await Promise.all([listPayments(), listUsers()]); return { payments, users } }
 
-function normalizeMutation(mutation: PaymentMutation) {
-  const totalInstallments = Math.min(
-    24,
-    Math.max(1, Math.trunc(mutation.totalInstallments) || 1),
-  )
-  return {
-    id:
-      mutation.id ||
-      `${stripCpf(mutation.userCpf)}_${readString(mutation.tripId)}`,
-    userCpf: stripCpf(mutation.userCpf),
-    tripId: readString(mutation.tripId),
-    totalInstallments,
-    paidInstallments: Math.min(
-      totalInstallments,
-      Math.max(0, Math.trunc(mutation.paidInstallments) || 0),
-    ),
-    dueDay: Math.min(31, Math.max(1, Math.trunc(mutation.dueDay) || 10)),
-    locked: mutation.locked,
-    receiptsJson: JSON.stringify(mutation.receipts),
+async function profileId(cpf: string) { return (unwrap<{ id: string }>(await supabase.from('profiles').select('id').eq('cpf', cpf).single())).id }
+
+async function uploadReceipts(paymentId: string, receipts: Record<string, PaymentReceipt>) {
+  for (const [installment, receipt] of Object.entries(receipts)) {
+    let path = `pending/${paymentId}/${installment}`
+    if (receipt.data.startsWith('data:')) {
+      const blob = await (await fetch(receipt.data)).blob()
+      if (blob.size > 5_000_000) throw new Error('Comprovante excede 5 MB.')
+      path = `${paymentId}/${installment}-${crypto.randomUUID()}`
+      unwrap(await supabase.storage.from('payment-receipts').upload(path, blob, { contentType: receipt.type || blob.type, upsert: true }))
+    }
+    unwrap(await supabase.from('payment_receipts').upsert({ payment_id: paymentId, installment: Number(installment), storage_path: path, file_name: receipt.filename, mime_type: receipt.type || 'application/octet-stream', note: receipt.note, status: receipt.status }, { onConflict: 'payment_id,installment' }))
   }
 }
 
 export async function savePayment(mutation: PaymentMutation) {
-  const normalized = normalizeMutation(mutation)
-  const persisted = await httpRequest<unknown>(
-    `/payments/${encodeURIComponent(normalized.id)}`,
-    {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(normalized),
-    },
-  )
-  const saved = toPayment(persisted)
-  if (!saved) throw new Error('O backend não confirmou o pagamento persistido.')
-  return saved
+  const cpf = stripCpf(mutation.userCpf); const travelerId = await profileId(cpf)
+  const total = Math.min(24, Math.max(1, Math.trunc(mutation.totalInstallments) || 1))
+  const id = mutation.id && /^[0-9a-f-]{36}$/i.test(mutation.id) ? mutation.id : null
+  const row = unwrap<{ id: string }>(await supabase.rpc('save_payment', { p_payment_id: id, p_trip_id: mutation.tripId, p_traveler_id: travelerId, p_total_installments: total, p_paid_installments: Math.min(total, Math.max(0, Math.trunc(mutation.paidInstallments))), p_due_day: Math.min(31, Math.max(1, Math.trunc(mutation.dueDay))), p_locked: mutation.locked, p_expected_version: null }))
+  await uploadReceipts(row.id, mutation.receipts)
+  const saved = unwrap<PaymentRow>(await supabase.from('payments').select('id, trip_id, traveler_id, total_installments, paid_installments, due_day, locked, profiles(cpf), payment_receipts(installment,storage_path,file_name,mime_type,note,status,uploaded_at)').eq('id', row.id).single())
+  return toPayment(saved)
 }

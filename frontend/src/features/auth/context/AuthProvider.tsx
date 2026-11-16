@@ -5,7 +5,7 @@ import {
   useState,
   type PropsWithChildren,
 } from 'react'
-import { subscribeToUnauthorized } from '../../../lib/http'
+import { supabase } from '../../../infrastructure/supabase/client'
 import { clearActiveTripId } from '../../trips/storage/activeTripStorage'
 import { getCurrentUser, logout } from '../api/authApi'
 import type { AuthUser } from '../model/authTypes'
@@ -22,10 +22,6 @@ export function AuthProvider({ children }: PropsWithChildren) {
     clearActiveTripId()
     setUser(null)
   }, [])
-
-  useEffect(() => {
-    return subscribeToUnauthorized(clearAuthenticatedState)
-  }, [clearAuthenticatedState])
 
   useEffect(() => {
     // Limpeza de transição: a sessão do servidor já substituiu todos os
@@ -50,6 +46,13 @@ export function AuthProvider({ children }: PropsWithChildren) {
     return () => {
       isCurrent = false
     }
+  }, [clearAuthenticatedState])
+
+  useEffect(() => {
+    const { data } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (!session) clearAuthenticatedState()
+    })
+    return () => data.subscription.unsubscribe()
   }, [clearAuthenticatedState])
 
   const signIn = useCallback((authenticatedUser: AuthUser) => {

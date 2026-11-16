@@ -1,94 +1,10 @@
-import { afterEach, describe, expect, it, vi } from 'vitest'
-import type { UserMutation } from '../model/userTypes'
-import { listUsers, updateUser } from './usersApi'
+import { describe, expect, it } from 'vitest'
+import { toSystemUser } from './usersApi'
 
-const mutation: UserMutation = {
-  birthdate: '1990-05-10',
-  childCpfs: ['52998224725'],
-  firstLogin: false,
-  hasKids: true,
-  kids: ['Lia', 'Caio'],
-  married: true,
-  name: 'Ana Atualizada',
-  role: 'admin',
-  spouseName: 'Bruno',
-  spouseCpf: '12345678909',
-}
-
-function jsonResponse(body: unknown) {
-  return new Response(JSON.stringify(body), {
-    status: 200,
-    headers: { 'Content-Type': 'application/json' },
-  })
-}
-
-describe('usersApi', () => {
-  afterEach(() => vi.unstubAllGlobals())
-
-  it('descarta senha antes de devolver usuários para o estado React', async () => {
-    vi.stubGlobal(
-      'fetch',
-      vi.fn(() =>
-        Promise.resolve(
-          jsonResponse([
-            {
-              cpf: '11144477735',
-              name: 'Tiago',
-              role: 'traveler',
-              password: 'segredo-retornado-pelo-backend',
-            },
-          ]),
-        ),
-      ),
-    )
-
-    const users = await listUsers()
-
-    expect(users).toHaveLength(1)
-    expect(users[0]).not.toHaveProperty('password')
-    expect(JSON.stringify(users)).not.toContain('segredo-retornado-pelo-backend')
+describe('perfil Supabase para usuário da interface', () => {
+  it('normaliza CPF e converte colunas snake_case do perfil', () => {
+    expect(toSystemUser({ cpf: '529.982.247-25', name: 'Ana', role: 'admin', birthdate: '1990-01-01', first_login: false, married: false, spouse_name: '', has_kids: false, childCpfs: [] })).toMatchObject({ cpf: '52998224725', name: 'Ana', role: 'admin', firstLogin: false })
   })
 
-  it('edita por endpoint granular preservando campos desconhecidos do servidor', async () => {
-    let persisted: Record<string, unknown> | null = null
-    const fetchMock = vi.fn<typeof fetch>((input, init) => {
-      if (input === '/auth/csrf') {
-        return Promise.resolve(jsonResponse({
-          headerName: 'X-XSRF-TOKEN',
-          token: 'csrf-test-token',
-        }))
-      }
-      if (init?.method === 'PUT') {
-        if (typeof init.body !== 'string') throw new Error('Corpo não informado.')
-        persisted = JSON.parse(init.body) as Record<string, unknown>
-        return Promise.resolve(jsonResponse(persisted))
-      }
-      return Promise.resolve(
-        jsonResponse([
-          {
-            cpf: '11144477735',
-            name: 'Ana',
-            role: 'traveler',
-            password: 'valor-preservado-sem-ir-ao-estado',
-            serverMetadata: { version: 7 },
-          },
-        ]),
-      )
-    })
-    vi.stubGlobal('fetch', fetchMock)
-
-    const updated = await updateUser('111.444.777-35', mutation)
-
-    expect(persisted).toMatchObject({
-      cpf: '11144477735',
-      childCpfs: ['52998224725'],
-      name: 'Ana Atualizada',
-      spouseName: 'Bruno',
-      spouseCpf: '12345678909',
-      kids: ['Lia', 'Caio'],
-      serverMetadata: { version: 7 },
-    })
-    expect(updated).not.toHaveProperty('password')
-    expect(fetchMock).toHaveBeenCalledTimes(3)
-  })
+  it('rejeita resposta sem CPF', () => expect(toSystemUser({ name: 'Sem CPF' })).toBeNull())
 })

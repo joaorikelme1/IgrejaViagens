@@ -1,144 +1,72 @@
-import { httpRequest } from '../../../lib/http'
+import { supabase, unwrap } from '../../../infrastructure/supabase/client'
 import { stripCpf } from '../../../shared/validation/cpf'
 import type { UserRole } from '../../auth/model/authTypes'
 import type { SystemUser, UserMutation } from '../model/userTypes'
 
-function records(value: unknown, label: string) {
-  if (!Array.isArray(value)) throw new Error(`Resposta de ${label} inválida.`)
-  return value.filter(
-    (item): item is Record<string, unknown> =>
-      typeof item === 'object' && item !== null && !Array.isArray(item),
-  )
-}
+type ProfileRow = { id: string; cpf: string; name: string; role: UserRole; birthdate: string | null; first_login: boolean; married: boolean; spouse_name: string; spouse_id: string | null; has_kids: boolean }
 
-function readString(value: unknown, fallback = '') {
-  return typeof value === 'string' ? value : fallback
-}
-
-function readRole(value: unknown): UserRole {
-  return typeof value === 'string' && value.toLowerCase() === 'admin'
-    ? 'admin'
-    : 'traveler'
-}
-
-function readKids(value: unknown) {
-  return Array.isArray(value)
-    ? value
-        .filter((kid): kid is string => typeof kid === 'string')
-        .map((kid) => kid.trim())
-        .filter(Boolean)
-    : []
-}
-
-function readCpfs(value: unknown) {
-  return Array.isArray(value)
-    ? [...new Set(value
-        .filter((cpf): cpf is string => typeof cpf === 'string')
-        .map(stripCpf)
-        .filter(Boolean))]
-    : []
-}
+const asString = (value: unknown) => typeof value === 'string' ? value : ''
+const role = (value: unknown): UserRole => value === 'admin' ? 'admin' : 'traveler'
 
 export function toSystemUser(value: unknown): SystemUser | null {
-  if (typeof value !== 'object' || value === null || Array.isArray(value)) {
-    return null
-  }
-
-  const source = value as Record<string, unknown>
-  const cpf = stripCpf(readString(source.cpf))
+  if (!value || typeof value !== 'object') return null
+  const v = value as Record<string, unknown>
+  const cpf = stripCpf(asString(v.cpf))
   if (!cpf) return null
-
-  // A lista explícita impede que password e outros campos sensíveis do
-  // contrato legado entrem no estado React.
-  return {
-    birthdate: readString(source.birthdate),
-    childCpfs: readCpfs(source.childCpfs),
-    cpf,
-    firstLogin: source.firstLogin === true,
-    hasKids: source.hasKids === true,
-    kids: readKids(source.kids),
-    married: source.married === true,
-    name: readString(source.name, 'Usuário sem nome'),
-    role: readRole(source.role),
-    spouseName: readString(source.spouseName),
-    spouseCpf: stripCpf(readString(source.spouseCpf)),
-  }
+  return { cpf, name: asString(v.name) || 'Usuário sem nome', role: role(v.role), birthdate: asString(v.birthdate), firstLogin: v.first_login === true || v.firstLogin === true, married: v.married === true, spouseName: asString(v.spouse_name) || asString(v.spouseName), spouseCpf: stripCpf(asString(v.spouseCpf)), hasKids: v.has_kids === true || v.hasKids === true, kids: Array.isArray(v.kids) ? v.kids.filter((k): k is string => typeof k === 'string') : [], childCpfs: Array.isArray(v.childCpfs) ? v.childCpfs.filter((c): c is string => typeof c === 'string').map(stripCpf) : [] }
 }
 
-function mutationToApi(cpf: string, mutation: UserMutation) {
-  return {
-    cpf,
-    name: mutation.name.trim(),
-    role: mutation.role,
-    birthdate: mutation.birthdate,
-    firstLogin: mutation.firstLogin,
-    married: mutation.married,
-    spouseName: mutation.married ? mutation.spouseName.trim() : '',
-    spouseCpf: mutation.married ? stripCpf(mutation.spouseCpf) : '',
-    hasKids: mutation.hasKids,
-    kids: mutation.hasKids
-      ? mutation.kids.map((kid) => kid.trim()).filter(Boolean)
-      : [],
-    childCpfs: mutation.hasKids
-      ? [...new Set(mutation.childCpfs.map(stripCpf).filter(Boolean))]
-      : [],
-  }
+async function profileRows() {
+  return unwrap<ProfileRow[]>(await supabase.from('profiles').select('id, cpf, name, role, birthdate, first_login, married, spouse_name, spouse_id, has_kids').order('name'))
 }
 
 export async function listUsers() {
-  const response = await httpRequest<unknown>('/users')
-  return records(response, 'usuários')
-    .map(toSystemUser)
-    .filter((user): user is SystemUser => user !== null)
+  const profiles = await profileRows()
+  const relationships = unwrap<{ parent_id: string; child_id: string }[]>(await supabase.from('family_relationships').select('parent_id, child_id'))
+  const byId = new Map(profiles.map((item) => [item.id, item]))
+  return profiles.map((item) => ({ cpf: item.cpf, name: item.name, role: item.role, birthdate: item.birthdate ?? '', firstLogin: item.first_login, married: item.married, spouseName: item.spouse_name, spouseCpf: byId.get(item.spouse_id ?? '')?.cpf ?? '', hasKids: item.has_kids, kids: [], childCpfs: relationships.filter((link) => link.parent_id === item.id).map((link) => byId.get(link.child_id)?.cpf ?? '').filter(Boolean) }))
+}
+
+async function idsForCpfs(cpfs: string[]) {
+  if (!cpfs.length) return new Map<string, string>()
+  const rows = unwrap<{ id: string; cpf: string }[]>(await supabase.from('profiles').select('id, cpf').in('cpf', cpfs))
+  return new Map(rows.map((item) => [item.cpf, item.id]))
+}
+
+async function syncRelations(profile: ProfileRow, mutation: UserMutation) {
+  const cpfs = [stripCpf(mutation.spouseCpf), ...mutation.childCpfs.map(stripCpf)].filter(Boolean)
+  const ids = await idsForCpfs(cpfs)
+  const spouseId = mutation.married ? ids.get(stripCpf(mutation.spouseCpf)) ?? null : null
+  if (mutation.married && mutation.spouseCpf && !spouseId) throw new Error('O cadastro selecionado para cônjuge não existe.')
+  unwrap(await supabase.from('profiles').update({ name: mutation.name.trim(), role: mutation.role, birthdate: mutation.birthdate || null, first_login: mutation.firstLogin, married: mutation.married, spouse_name: mutation.married ? mutation.spouseName.trim() : '', spouse_id: spouseId, has_kids: mutation.hasKids }).eq('id', profile.id))
+  unwrap(await supabase.from('family_relationships').delete().eq('parent_id', profile.id))
+  const children = mutation.hasKids ? mutation.childCpfs.map(stripCpf).map((cpf) => ids.get(cpf)).filter((id): id is string => Boolean(id)).map((child_id) => ({ parent_id: profile.id, child_id })) : []
+  if (children.length) unwrap(await supabase.from('family_relationships').insert(children))
 }
 
 export async function createUser(cpfValue: string, mutation: UserMutation) {
   const cpf = stripCpf(cpfValue)
-  if (!mutation.initialPassword || mutation.initialPassword.length < 8) {
-    throw new Error('A senha inicial deve ter ao menos 8 caracteres.')
-  }
-  const response = await httpRequest<unknown>('/users', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      ...mutationToApi(cpf, mutation),
-      password: mutation.initialPassword,
-    }),
-  })
-  const user = toSystemUser(response)
-  if (!user) throw new Error('Resposta de usuário inválida.')
-  return user
+  if (!mutation.initialPassword || mutation.initialPassword.length < 8) throw new Error('A senha inicial deve ter ao menos 8 caracteres.')
+  unwrap(await supabase.functions.invoke('provision-user', { body: { cpf, password: mutation.initialPassword, name: mutation.name, role: mutation.role, birthdate: mutation.birthdate || null, firstLogin: mutation.firstLogin, married: mutation.married, spouseName: mutation.spouseName, hasKids: mutation.hasKids } }))
+  const row = unwrap<ProfileRow>(await supabase.from('profiles').select('id, cpf, name, role, birthdate, first_login, married, spouse_name, spouse_id, has_kids').eq('cpf', cpf).single())
+  await syncRelations(row, mutation)
+  const created = (await listUsers()).find((user) => user.cpf === cpf)
+  if (!created) throw new Error('Usuário não foi criado.')
+  return created
 }
 
 export async function updateUser(cpfValue: string, mutation: UserMutation) {
   const cpf = stripCpf(cpfValue)
-  const currentUsers = records(
-    await httpRequest<unknown>('/users'),
-    'usuários',
-  )
-  const current = currentUsers.find(
-    (user) => stripCpf(readString(user.cpf)) === cpf,
-  )
-  if (!current) throw new Error('Usuário não encontrado.')
-
-  const response = await httpRequest<unknown>(
-    `/users/${encodeURIComponent(cpf)}`,
-    {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      // O merge preserva campos que o formulário desconhece. A senha não é
-      // alterada porque o backend mantém a credencial quando o campo é omitido.
-      body: JSON.stringify({ ...current, ...mutationToApi(cpf, mutation) }),
-    },
-  )
-  const user = toSystemUser(response)
-  if (!user) throw new Error('Resposta de usuário inválida.')
-  return user
+  const row = unwrap<ProfileRow>(await supabase.from('profiles').select('id, cpf, name, role, birthdate, first_login, married, spouse_name, spouse_id, has_kids').eq('cpf', cpf).single())
+  await syncRelations(row, mutation)
+  const updated = (await listUsers()).find((user) => user.cpf === cpf)
+  if (!updated) throw new Error('Usuário não encontrado.')
+  return updated
 }
 
 export async function deleteUser(cpfValue: string) {
   const cpf = stripCpf(cpfValue)
-  await httpRequest<unknown>(`/users/${encodeURIComponent(cpf)}`, {
-    method: 'DELETE',
-  })
+  const row = unwrap<{ id: string }>(await supabase.from('profiles').select('id').eq('cpf', cpf).single())
+  // Deletar a identidade do Auth requer a Edge Function; esta rota não expõe service_role ao navegador.
+  unwrap(await supabase.functions.invoke('provision-user', { body: { action: 'delete', userId: row.id } }))
 }

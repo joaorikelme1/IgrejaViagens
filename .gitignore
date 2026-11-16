@@ -1,0 +1,4 @@
+/node_modules/
+/supabase/functions/.env
+/supabase/.temp/
+/supabase/.branches/

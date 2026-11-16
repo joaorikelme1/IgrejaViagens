@@ -13,10 +13,20 @@ export function validateProfilePhotoFile(file: File) {
 }
 
 export function safeProfilePhoto(value: string | null | undefined) {
-  return typeof value === 'string' &&
-    /^data:image\/(?:jpeg|png|webp);base64,[a-z0-9+/=]+$/i.test(value)
-    ? value
-    : ''
+  if (typeof value !== 'string') return ''
+  if (/^data:image\/(?:jpeg|png|webp);base64,[a-z0-9+/=]+$/i.test(value)) return value
+  try {
+    const url = new URL(value)
+    const configuredOrigin = import.meta.env.VITE_SUPABASE_URL
+      ? new URL(import.meta.env.VITE_SUPABASE_URL).origin
+      : ''
+    return configuredOrigin === url.origin &&
+      url.pathname.includes('/storage/v1/object/sign/profile-photos/')
+      ? value
+      : ''
+  } catch {
+    return ''
+  }
 }
 
 function loadImage(url: string) {

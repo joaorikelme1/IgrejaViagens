@@ -1,73 +1,25 @@
-import { httpRequest } from '../../../lib/http'
+import { supabase, unwrap } from '../../../infrastructure/supabase/client'
 import { stripCpf } from '../../../shared/validation/cpf'
 import type { UserMutation } from '../model/userTypes'
-import { deleteUser, toSystemUser } from './usersApi'
+import { createUser, deleteUser } from './usersApi'
 
-function mutationToApi(cpf: string, mutation: UserMutation) {
-  return {
-    birthdate: mutation.birthdate,
-    childCpfs: mutation.hasKids
-      ? [...new Set(mutation.childCpfs.map(stripCpf).filter(Boolean))]
-      : [],
-    cpf,
-    firstLogin: true,
-    hasKids: mutation.hasKids,
-    kids: mutation.hasKids
-      ? mutation.kids.map((kid) => kid.trim()).filter(Boolean)
-      : [],
-    married: mutation.married,
-    name: mutation.name.trim(),
-    password: mutation.initialPassword,
-    role: 'traveler',
-    spouseName: mutation.married ? mutation.spouseName.trim() : '',
-    spouseCpf: mutation.married ? stripCpf(mutation.spouseCpf) : '',
-  }
+async function profileId(cpf: string) {
+  const row = unwrap<{ id: string }>(await supabase.from('profiles').select('id').eq('cpf', cpf).single())
+  return row.id
 }
 
-export async function addExistingUserToTrip(
-  cpfValue: string,
-  tripId: string,
-) {
-  const cpf = stripCpf(cpfValue)
-  await httpRequest<unknown>(
-    `/trips/${encodeURIComponent(tripId)}/travelers/${encodeURIComponent(cpf)}`,
-    { method: 'PUT' },
-  )
+export async function addExistingUserToTrip(cpfValue: string, tripId: string) {
+  unwrap(await supabase.rpc('add_trip_traveler', { p_trip_id: tripId, p_traveler_id: await profileId(stripCpf(cpfValue)) }))
 }
 
-export async function createTravelerForTrip(
-  cpfValue: string,
-  mutation: UserMutation,
-  tripId: string,
-) {
-  const cpf = stripCpf(cpfValue)
-  if (!mutation.initialPassword || mutation.initialPassword.length < 8) {
-    throw new Error('A senha inicial deve ter ao menos 8 caracteres.')
-  }
-  const response = await httpRequest<unknown>(
-    `/trips/${encodeURIComponent(tripId)}/travelers`,
-    {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(mutationToApi(cpf, mutation)),
-    },
-  )
-  const created = toSystemUser(response)
-  if (!created) throw new Error('Resposta de usuário inválida.')
+export async function createTravelerForTrip(cpfValue: string, mutation: UserMutation, tripId: string) {
+  const created = await createUser(stripCpf(cpfValue), { ...mutation, role: 'traveler', firstLogin: true })
+  await addExistingUserToTrip(created.cpf, tripId)
   return created
 }
 
-export async function removeTravelerFromTrip(
-  cpfValue: string,
-  tripId: string,
-) {
-  const cpf = stripCpf(cpfValue)
-  await httpRequest<unknown>(
-    `/trips/${encodeURIComponent(tripId)}/travelers/${encodeURIComponent(cpf)}`,
-    { method: 'DELETE' },
-  )
+export async function removeTravelerFromTrip(cpfValue: string, tripId: string) {
+  unwrap(await supabase.rpc('remove_trip_traveler', { p_trip_id: tripId, p_traveler_id: await profileId(stripCpf(cpfValue)) }))
 }
 
-export async function deleteUserGlobally(cpfValue: string) {
-  await deleteUser(stripCpf(cpfValue))
-}
+export async function deleteUserGlobally(cpfValue: string) { await deleteUser(stripCpf(cpfValue)) }
