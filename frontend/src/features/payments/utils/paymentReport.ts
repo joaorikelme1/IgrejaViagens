@@ -140,7 +140,7 @@ export function buildPaymentReportHtml({
     <div><span>Origem</span><strong>${escapeHtml(trip.departurePlace || 'Não informada')}</strong></div>
     <div><span>Destino</span><strong>${escapeHtml(trip.destination || 'Não informado')}</strong></div>
     <div><span>Data e horário</span><strong>${escapeHtml(formatTripDate(trip.date))} · ${escapeHtml(trip.departureTime || 'Não informado')}</strong></div>
-    <div><span>Viajantes</span><strong>${rows.length} de ${trip.maxPeople}</strong></div>
+    <div><span>Viajantes</span><strong>${rows.length}</strong></div>
     <div><span>Valor individual</span><strong>${escapeHtml(formatCurrency(trip.price))}</strong></div>
   </section>
   <section class="summary" aria-label="Resumo financeiro">

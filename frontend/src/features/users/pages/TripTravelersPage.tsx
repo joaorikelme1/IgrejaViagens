@@ -75,7 +75,6 @@ function TripTravelersContent({ trip }: { trip: Trip }) {
     return rows.filter((row) => visible.has(row.user.cpf))
   }, [query, rows])
   const normalizedMembers = new Set(memberCpfs.map(stripCpf))
-  const capacityReached = normalizedMembers.size >= trip.maxPeople
   const availableUsers = (source?.users ?? []).filter(
     (user) => !normalizedMembers.has(user.cpf),
   )
@@ -101,11 +100,6 @@ function TripTravelersContent({ trip }: { trip: Trip }) {
       return
     }
 
-    if (capacityReached) {
-      throw new Error(
-        `A viagem atingiu o limite de ${trip.maxPeople} ${trip.maxPeople === 1 ? 'pessoa' : 'pessoas'}.`,
-      )
-    }
     if (source?.users.some((user) => user.cpf === stripCpf(cpf))) {
       throw new Error(
         'Este CPF já existe no cadastro global. Use “Adicionar existente”.',
@@ -136,10 +130,10 @@ function TripTravelersContent({ trip }: { trip: Trip }) {
   return (
     <div className="user-management-page">
       <header className="user-page-intro">
-        <div><span>Viagem ativa</span><h2>Viajantes de {trip.name}</h2><p>{normalizedMembers.size} de {trip.maxPeople} vaga(s) ocupada(s).</p></div>
+        <div><span>Viagem ativa</span><h2>Viajantes de {trip.name}</h2><p>{normalizedMembers.size} viajante(s) associado(s).</p></div>
         <div className="user-page-actions">
-          <button disabled={capacityReached} onClick={() => setShowExisting(true)} type="button">Adicionar existente</button>
-          <button className="user-primary-action" disabled={capacityReached} onClick={() => setFormState({ mode: 'create' })} type="button">Novo viajante</button>
+          <button onClick={() => setShowExisting(true)} type="button">Adicionar existente</button>
+          <button className="user-primary-action" onClick={() => setFormState({ mode: 'create' })} type="button">Novo viajante</button>
         </div>
       </header>
 
@@ -147,7 +141,6 @@ function TripTravelersContent({ trip }: { trip: Trip }) {
         Remover nesta página mantém o cadastro global. A exclusão definitiva é
         uma ação separada, disponível somente em Cadastro Global.
       </aside>
-      {capacityReached ? <p className="form-message is-error" role="alert">A viagem atingiu o limite de {trip.maxPeople} {trip.maxPeople === 1 ? 'pessoa' : 'pessoas'}.</p> : null}
       {feedback ? <p className="form-message is-success" role="status">{feedback}</p> : null}
 
       <section className="user-panel">
@@ -165,7 +158,6 @@ function TripTravelersContent({ trip }: { trip: Trip }) {
 
       {showExisting ? (
         <AddTravelerToTripModal
-          capacityReached={capacityReached}
           onAdd={addExisting}
           onClose={() => setShowExisting(false)}
           users={availableUsers}

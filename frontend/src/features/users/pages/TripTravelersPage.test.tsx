@@ -163,14 +163,16 @@ describe('TripTravelersPage', () => {
     )
   })
 
-  it('bloqueia inclusão quando maxPeople foi atingido', async () => {
+  it('permite inclusão acima da estimativa de pessoas', async () => {
     renderPage({ ...trip, maxPeople: 1 })
 
-    expect(await screen.findByRole('button', { name: 'Novo viajante' })).toBeDisabled()
-    expect(screen.getByRole('button', { name: 'Adicionar existente' })).toBeDisabled()
-    expect(screen.getByText('A viagem atingiu o limite de 1 pessoa.')).toBeInTheDocument()
-    expect(mocks.createTraveler).not.toHaveBeenCalled()
-    expect(mocks.addExisting).not.toHaveBeenCalled()
+    await userEvent.click(await screen.findByRole('button', { name: 'Adicionar existente' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Adicionar Carla Disponível' }))
+
+    await waitFor(() =>
+      expect(mocks.addExisting).toHaveBeenCalledWith(available.cpf, trip.id),
+    )
+    expect(screen.queryByText(/atingiu o limite/i)).not.toBeInTheDocument()
   })
 
   it('remove apenas da viagem e não chama exclusão global', async () => {

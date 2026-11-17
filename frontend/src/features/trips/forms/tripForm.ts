@@ -68,9 +68,9 @@ export function tripFormToMutation(values: TripFormValues): TripMutation {
   if (!values.date) throw new Error('Informe a data da viagem.')
   if (!values.departureTime) throw new Error('Informe o horário da viagem.')
 
-  const maxPeople = parseNonNegative(values.maxPeople, 'O limite de pessoas')
+  const maxPeople = parseNonNegative(values.maxPeople, 'A estimativa de pessoas')
   if (!Number.isInteger(maxPeople) || maxPeople < 1) {
-    throw new Error('O limite de pessoas deve ser um inteiro maior que zero.')
+    throw new Error('A estimativa de pessoas deve ser um inteiro maior que zero.')
   }
 
   const buses = values.buses.map((bus, index) => {

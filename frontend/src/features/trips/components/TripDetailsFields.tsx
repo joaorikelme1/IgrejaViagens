@@ -72,7 +72,7 @@ export function TripDetailsFields({
         />
       </label>
       <label className="trip-field">
-        <span>Limite de pessoas</span>
+        <span>Estimativa de pessoas</span>
         <input
           disabled={disabled}
           min="1"
@@ -108,7 +108,7 @@ export function TripDetailsFields({
           value={values.arrecadationGoal}
         />
         <small>
-          Sugestão pelo limite: R${' '}
+          Sugestão pela estimativa: R${' '}
           {suggestion.toLocaleString('pt-BR', {
             minimumFractionDigits: 2,
           })}

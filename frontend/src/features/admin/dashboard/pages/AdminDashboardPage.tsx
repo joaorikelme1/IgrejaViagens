@@ -131,7 +131,7 @@ function DashboardContent({ trip }: { trip: Trip }) {
 
       <section aria-label="Indicadores da viagem" className="dashboard-stats">
         <StatCard
-          detail={`Limite cadastrado: ${trip.maxPeople}`}
+          detail={`Estimativa cadastrada: ${trip.maxPeople}`}
           label="Total de viajantes"
           value={indicators.totalTravelers}
         />

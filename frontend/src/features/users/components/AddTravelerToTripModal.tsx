@@ -4,14 +4,12 @@ import { filterUsers } from '../lib/userSearch'
 import type { SystemUser } from '../model/userTypes'
 
 interface AddTravelerToTripModalProps {
-  capacityReached: boolean
   onAdd: (cpf: string) => Promise<void>
   onClose: () => void
   users: SystemUser[]
 }
 
 export function AddTravelerToTripModal({
-  capacityReached,
   onAdd,
   onClose,
   users,
@@ -57,11 +55,6 @@ export function AddTravelerToTripModal({
         </header>
         <div className="user-management-modal__body">
           {error ? <p className="form-message is-error" role="alert">{error}</p> : null}
-          {capacityReached ? (
-            <p className="form-message is-error" role="alert">
-              O limite de pessoas desta viagem foi atingido.
-            </p>
-          ) : null}
           <label className="user-field">
             Buscar por nome ou CPF
             <input
@@ -80,7 +73,7 @@ export function AddTravelerToTripModal({
                   </div>
                   <button
                     aria-label={`Adicionar ${user.name}`}
-                    disabled={capacityReached || savingCpf !== null}
+                    disabled={savingCpf !== null}
                     onClick={() => void add(user.cpf)}
                     type="button"
                   >
