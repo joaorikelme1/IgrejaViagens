@@ -30,6 +30,9 @@ export function RoomAssignment({
     })
     return result
   }, [room.id, rooms])
+  const availableUsers = users.filter(
+    (user) => selected.has(user.cpf) || !otherRooms.has(user.cpf),
+  )
 
   const submit = async () => {
     try {
@@ -51,11 +54,10 @@ export function RoomAssignment({
         <header className="operation-modal__header"><div><h2 id="room-assignment-title">Ocupantes de {room.name}</h2><p>{selected.size}/{room.capacity} pessoa(s) selecionada(s).</p></div><button aria-label="Fechar distribuição de quarto" disabled={saving} onClick={onClose} type="button">×</button></header>
         <div className="operation-modal__body assignment-list">
           {error ? <p className="form-message is-error" role="alert">{error}</p> : null}
-          {users.length ? users.map((user) => {
-            const otherRoom = otherRooms.get(user.cpf)
+          {availableUsers.length ? availableUsers.map((user) => {
             const checked = selected.has(user.cpf)
-            return <label className={otherRoom && !checked ? 'is-blocked' : ''} key={user.cpf}><input checked={checked} disabled={saving || Boolean(otherRoom && !checked)} onChange={(event) => setSelected((value) => { const next = new Set(value); if (event.currentTarget.checked) next.add(user.cpf); else next.delete(user.cpf); return next })} type="checkbox" /><span><strong>{user.name}</strong><small>{maskCpf(user.cpf)}{otherRoom ? ` · já está no quarto ${otherRoom}` : ''}</small></span></label>
-          }) : <p className="operation-empty">Nenhum viajante associado à viagem.</p>}
+            return <label key={user.cpf}><input checked={checked} disabled={saving} onChange={(event) => setSelected((value) => { const next = new Set(value); if (event.currentTarget.checked) next.add(user.cpf); else next.delete(user.cpf); return next })} type="checkbox" /><span><strong>{user.name}</strong><small>{maskCpf(user.cpf)}</small></span></label>
+          }) : <p className="operation-empty">Todos os viajantes já possuem quarto.</p>}
         </div>
         <footer className="operation-modal__footer"><button disabled={saving} onClick={onClose} type="button">Cancelar</button><button className="is-primary" disabled={saving} onClick={() => void submit()} type="button">{saving ? 'Persistindo...' : 'Salvar ocupantes'}</button></footer>
       </section>

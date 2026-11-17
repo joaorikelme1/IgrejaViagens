@@ -67,8 +67,8 @@ function TripTravelersContent({ trip }: { trip: Trip }) {
   }, [trip.id])
 
   const rows = useMemo(
-    () => (source ? buildTripTravelers(memberCpfs, source) : []),
-    [memberCpfs, source],
+    () => (source ? buildTripTravelers(memberCpfs, source, trip.buses) : []),
+    [memberCpfs, source, trip.buses],
   )
   const filteredRows = useMemo(() => {
     const visible = new Set(filterUsers(rows.map((row) => row.user), query).map((user) => user.cpf))

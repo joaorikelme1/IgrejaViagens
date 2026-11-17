@@ -26,6 +26,7 @@ vi.mock('../api/operationsApi', () => ({
 }))
 
 const cpf = '11144477735'
+const availableCpf = '52998224725'
 const bus: BusConfig = {
   id: 'bus-existing',
   floors: 2,
@@ -41,14 +42,14 @@ const trip: Trip = {
   departurePlace: '',
   departureTime: '',
   date: '',
-  maxPeople: 1,
+  maxPeople: 2,
   price: 100,
   arrecadationGoal: 100,
   rules: '',
   buses: [bus],
   hotelsJson: '[]',
-  travelersJson: JSON.stringify([cpf]),
-  travelerCpfs: [cpf],
+  travelersJson: JSON.stringify([cpf, availableCpf]),
+  travelerCpfs: [cpf, availableCpf],
 }
 const user: SystemUser = {
   birthdate: '',
@@ -63,6 +64,12 @@ const user: SystemUser = {
   spouseName: '',
   spouseCpf: '',
 }
+const availableUser: SystemUser = {
+  ...user,
+  cpf: availableCpf,
+  name: 'Bruno',
+  role: 'traveler',
+}
 const occupiedSeat: SeatRecord = {
   id: 'seat-existing',
   tripId: trip.id,
@@ -71,7 +78,7 @@ const occupiedSeat: SeatRecord = {
   seatNumber: 2,
   userCpf: cpf,
 }
-const source: TransportSource = { seats: [occupiedSeat], users: [user] }
+const source: TransportSource = { seats: [occupiedSeat], users: [user, availableUser] }
 let savedBuses: BusConfig[] | null = null
 let savedSeats: SeatRecord[] = []
 
@@ -98,7 +105,7 @@ describe('BusManagementPage', () => {
 
   it('mostra pisos, assentos e ocupação usando o floor do backend', async () => {
     const { container } = render(<BusManagementPage />)
-    expect(await screen.findByText('Ônibus bus-existing')).toBeInTheDocument()
+    expect(await screen.findByText('Ônibus 1')).toBeInTheDocument()
     expect(container.querySelector('.transport-bus-card')).toHaveClass('has-two-floors')
     expect(container.querySelector('.transport-bus-card__info')).toBeInTheDocument()
     expect(container.querySelector('.transport-bus-card__actions')).toContainElement(
@@ -109,13 +116,16 @@ describe('BusManagementPage', () => {
     expect(
       screen.getByRole('button', { name: 'Assento 2, ocupado por Ana' }),
     ).toBeInTheDocument()
+    await userEvent.click(screen.getByRole('button', { name: 'Assento 2, ocupado por Ana' }))
+    expect(screen.getByRole('dialog')).toHaveTextContent('Assento ocupado por Ana')
+    expect(screen.getByRole('dialog')).toHaveTextContent('Ana ocupa o assento 2')
     expect(screen.getAllByRole('button', { name: 'Assento 1, livre' })).toHaveLength(2)
     expect(screen.queryByText('M')).not.toBeInTheDocument()
   })
 
   it('cadastra ônibus sem renumerar o ônibus existente', async () => {
     render(<BusManagementPage />)
-    await screen.findByText('Ônibus bus-existing')
+    await screen.findByText('Ônibus 1')
     await userEvent.click(screen.getByRole('button', { name: 'Cadastrar ônibus' }))
     await userEvent.click(screen.getByRole('button', { name: 'Salvar ônibus' }))
     await waitFor(() => expect(mocks.saveBusStructure).toHaveBeenCalled())
@@ -125,22 +135,24 @@ describe('BusManagementPage', () => {
     expect(String(savedBuses?.[1].id)).toMatch(/^[0-9a-f-]{36}$/i)
   })
 
-  it('move participante para assento livre preservando a distribuição completa', async () => {
+  it('mostra somente viajantes sem assento e preserva a distribuição completa', async () => {
     render(<BusManagementPage />)
     const freeSeats = await screen.findAllByRole('button', {
       name: 'Assento 1, livre',
     })
     await userEvent.click(freeSeats[0])
-    await userEvent.click(screen.getByRole('button', { name: /Ana.*Selecionar/ }))
+    expect(screen.queryByRole('button', { name: /Ana.*Selecionar/ })).not.toBeInTheDocument()
+    expect(screen.getByText('Ônibus 1 · piso 1')).toBeInTheDocument()
+    await userEvent.click(screen.getByRole('button', { name: /Bruno.*Selecionar/ }))
     await waitFor(() => expect(mocks.saveTripSeatAssignments).toHaveBeenCalled())
 
     expect(savedSeats).toContainEqual(expect.objectContaining({
       busId: 'bus-existing',
       floor: 1,
       seatNumber: 1,
-      userCpf: cpf,
+      userCpf: availableCpf,
     }))
-    expect(savedSeats).not.toContainEqual(expect.objectContaining({ floor: 2, seatNumber: 2, userCpf: cpf }))
+    expect(savedSeats).toContainEqual(expect.objectContaining({ floor: 2, seatNumber: 2, userCpf: cpf }))
   })
 
   it('não reduz pisos quando isso apagaria assento atribuído', async () => {

@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useTrip } from '../../trips/hooks/useTrip'
+import { busDisplayName } from '../../trips/lib/busDisplayName'
 import type { BusConfig, Trip } from '../../trips/model/tripTypes'
 import {
   deleteSeats,
@@ -24,7 +25,7 @@ import type { SeatRecord, TransportSource } from '../model/operationTypes'
 import './operations.css'
 
 type EditingBus = { bus: BusConfig; isNew: boolean }
-type SeatTarget = { busId: string; floor: number; seatNumber: number }
+type SeatTarget = { busId: string; busName: string; floor: number; seatNumber: number }
 type DeleteTarget =
   | { kind: 'bus'; bus: BusConfig }
   | { kind: 'seat'; seat: SeatRecord }
@@ -66,6 +67,10 @@ function BusManagementContent({ trip }: { trip: Trip }) {
       (user) => members.has(user.cpf),
     )
   }, [source, trip.travelerCpfs])
+  const availableTravelers = useMemo(() => {
+    const seated = new Set((source?.seats ?? []).map((seat) => seat.userCpf))
+    return travelers.filter((traveler) => !seated.has(traveler.cpf))
+  }, [source?.seats, travelers])
   const conflicts = source
     ? getSeatConflicts(buses, source.seats, trip.travelerCpfs)
     : []
@@ -189,14 +194,15 @@ function BusManagementContent({ trip }: { trip: Trip }) {
       {feedback ? <p className="form-message is-success" role="status">{feedback}</p> : null}
       {conflicts.length ? <section className="operation-conflicts" role="alert"><h3>Inconsistências de assentos ({conflicts.length})</h3><ul>{conflicts.map((conflict) => <li key={conflict.key}>{conflict.message}</li>)}</ul></section> : null}
 
-      {buses.length ? <div className="bus-list">{buses.map((bus) => {
+      {buses.length ? <div className="bus-list">{buses.map((bus, busIndex) => {
         const busSeats = source.seats.filter((seat) => seat.busId === String(bus.id))
-        return <section className={`transport-bus-card ${bus.floors === 2 ? 'has-two-floors' : ''}`} key={String(bus.id)}><header><div className="transport-bus-card__info"><h3>{bus.label || `Ônibus ${String(bus.id)}`}</h3><small>{[bus.company, bus.driverName ? `Motorista: ${bus.driverName}` : '', bus.plate].filter(Boolean).join(' · ') || 'Dados operacionais não informados'}</small><small>{bus.floors} piso(s) · {bus.seats} assentos · {busSeats.length} atribuição(ões)</small></div><div className="transport-bus-card__actions"><button onClick={() => setEditing({ bus, isNew: false })} type="button">Editar ônibus</button><button className="is-danger-link" onClick={() => setDeleting({ kind: 'bus', bus })} type="button">Excluir ônibus</button></div></header><SeatMap bus={bus} onSeat={(floor, seatNumber, occupant) => { if (occupant) setDeleting({ kind: 'seat', seat: occupant }); else setAssigning({ busId: String(bus.id), floor, seatNumber }) }} seats={busSeats} users={source.users} /></section>
+        const busName = busDisplayName(bus, busIndex)
+        return <section className={`transport-bus-card ${bus.floors === 2 ? 'has-two-floors' : ''}`} key={String(bus.id)}><header><div className="transport-bus-card__info"><h3>{busName}</h3><small>{[bus.company, bus.driverName ? `Motorista: ${bus.driverName}` : '', bus.plate].filter(Boolean).join(' · ') || 'Dados operacionais não informados'}</small><small>{bus.floors} piso(s) · {bus.seats} assentos · {busSeats.length} atribuição(ões)</small></div><div className="transport-bus-card__actions"><button onClick={() => setEditing({ bus, isNew: false })} type="button">Editar ônibus</button><button className="is-danger-link" onClick={() => setDeleting({ kind: 'bus', bus })} type="button">Excluir ônibus</button></div></header><SeatMap bus={bus} onSeat={(floor, seatNumber, occupant) => { if (occupant) setDeleting({ kind: 'seat', seat: occupant }); else setAssigning({ busId: String(bus.id), busName, floor, seatNumber }) }} seats={busSeats} users={source.users} /></section>
       })}</div> : <section className="operation-empty-state"><h3>Nenhum ônibus configurado</h3><p>Cadastre o primeiro veículo sem alterar os demais dados da viagem.</p></section>}
 
       {editing ? <BusEditorModal bus={editing.bus} isNew={editing.isNew} onClose={() => setEditing(null)} onSave={saveBus} /> : null}
-      {assigning ? <SeatAssignment busId={assigning.busId} floor={assigning.floor} onClose={() => setAssigning(null)} onSave={assignSeat} seatNumber={assigning.seatNumber} users={travelers} /> : null}
-      {deleting ? <OperationConfirmModal confirmLabel={deleting.kind === 'bus' ? 'Excluir ônibus' : 'Liberar assento'} description={deleting.kind === 'bus' ? `O ônibus ${String(deleting.bus.id)} e todas as atribuições ligadas a ele serão removidos. Os viajantes serão mantidos.` : `O assento ${deleting.seat.seatNumber} do piso ${deleting.seat.floor} será liberado. O viajante será mantido.`} onClose={() => setDeleting(null)} onConfirm={confirmDelete} title={deleting.kind === 'bus' ? 'Excluir ônibus?' : 'Liberar assento?'} /> : null}
+      {assigning ? <SeatAssignment busName={assigning.busName} floor={assigning.floor} onClose={() => setAssigning(null)} onSave={assignSeat} seatNumber={assigning.seatNumber} users={availableTravelers} /> : null}
+      {deleting ? <OperationConfirmModal confirmLabel={deleting.kind === 'bus' ? 'Excluir ônibus' : 'Liberar assento'} description={deleting.kind === 'bus' ? `${busDisplayName(deleting.bus, buses.findIndex((bus) => String(bus.id) === String(deleting.bus.id)))} e todas as atribuições ligadas a ele serão removidos. Os viajantes serão mantidos.` : `${source.users.find((user) => user.cpf === deleting.seat.userCpf)?.name ?? deleting.seat.userCpf} ocupa o assento ${deleting.seat.seatNumber}, piso ${deleting.seat.floor}, do ônibus selecionado.`} onClose={() => setDeleting(null)} onConfirm={confirmDelete} title={deleting.kind === 'bus' ? 'Excluir ônibus?' : `Assento ocupado por ${source.users.find((user) => user.cpf === deleting.seat.userCpf)?.name ?? deleting.seat.userCpf}`} /> : null}
     </div>
   )
 }

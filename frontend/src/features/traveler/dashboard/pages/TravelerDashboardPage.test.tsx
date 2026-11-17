@@ -100,7 +100,7 @@ describe('TravelerDashboardPage', () => {
     expect(screen.getByText('Goiânia')).toBeInTheDocument()
     expect(screen.getByText('20/01/2027')).toBeInTheDocument()
     expect(screen.getByText('08:30')).toBeInTheDocument()
-    expect(screen.getByText(/Ônibus bus-1 · Piso 1 · Assento\(s\) 12/)).toBeInTheDocument()
+    expect(screen.getByText(/Ônibus 1 · Piso 1 · Assento\(s\) 12/)).toBeInTheDocument()
     expect(screen.getByText('Quarto 5 · Duplo')).toBeInTheDocument()
     expect(screen.getAllByText('Confirmado')).toHaveLength(2)
   })

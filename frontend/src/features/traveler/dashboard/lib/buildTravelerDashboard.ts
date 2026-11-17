@@ -1,4 +1,5 @@
 import type { Trip } from '../../../trips/model/tripTypes'
+import { busDisplayName } from '../../../trips/lib/busDisplayName'
 import type {
   TravelerDashboardSource,
   TravelerDashboardView,
@@ -91,7 +92,7 @@ function buildSeats(
   warnings: string[],
 ): TravelerSeatGroup[] {
   const configuredBuses = new Map(
-    trip.buses.map((bus) => [String(bus.id), bus] as const),
+    trip.buses.map((bus, index) => [String(bus.id), { bus, index }] as const),
   )
   const groups = new Map<string, TravelerSeatGroup>()
   let ignoredInvalidSeat = false
@@ -104,10 +105,11 @@ function buildSeats(
       continue
     }
 
-    const bus = configuredBuses.get(seat.busId)
-    if (!bus) {
+    const configuredBus = configuredBuses.get(seat.busId)
+    if (!configuredBus) {
       warnings.push(`O assento ${seatNumber} referencia um ônibus não configurado.`)
     } else {
+      const { bus } = configuredBus
       const capacity = floor === 2 ? bus.seatsFloor2 : bus.seatsFloor1
       if (floor > bus.floors || seatNumber > capacity) {
         warnings.push(
@@ -119,6 +121,9 @@ function buildSeats(
     const key = `${seat.busId}:${floor}`
     const group = groups.get(key) ?? {
       busId: seat.busId,
+      busName: configuredBus
+        ? busDisplayName(configuredBus.bus, configuredBus.index)
+        : 'Ônibus não configurado',
       floor,
       seatNumbers: [],
     }

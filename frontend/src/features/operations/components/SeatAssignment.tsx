@@ -3,14 +3,14 @@ import { maskCpf } from '../../../shared/validation/cpf'
 import type { SystemUser } from '../../users/model/userTypes'
 
 export function SeatAssignment({
-  busId,
+  busName,
   floor,
   onClose,
   onSave,
   seatNumber,
   users,
 }: {
-  busId: string
+  busName: string
   floor: number
   onClose: () => void
   onSave: (cpf: string) => Promise<void>
@@ -36,10 +36,10 @@ export function SeatAssignment({
   return (
     <div className="operation-overlay">
       <section aria-labelledby="seat-assignment-title" aria-modal="true" className="operation-modal" role="dialog">
-        <header className="operation-modal__header"><div><h2 id="seat-assignment-title">Atribuir assento {seatNumber}</h2><p>Ônibus {busId} · piso {floor}</p></div><button aria-label="Fechar atribuição de assento" disabled={savingCpf !== null} onClick={onClose} type="button">×</button></header>
+        <header className="operation-modal__header"><div><h2 id="seat-assignment-title">Atribuir assento {seatNumber}</h2><p>{busName} · piso {floor}</p></div><button aria-label="Fechar atribuição de assento" disabled={savingCpf !== null} onClick={onClose} type="button">×</button></header>
         <div className="operation-modal__body assignment-list">
           {error ? <p className="form-message is-error" role="alert">{error}</p> : null}
-          {users.length ? users.map((user) => <button disabled={savingCpf !== null} key={user.cpf} onClick={() => void save(user.cpf)} type="button"><span><strong>{user.name}</strong><small>{maskCpf(user.cpf)}</small></span><b>{savingCpf === user.cpf ? 'Persistindo...' : 'Selecionar'}</b></button>) : <p className="operation-empty">Nenhum viajante associado à viagem.</p>}
+          {users.length ? users.map((user) => <button disabled={savingCpf !== null} key={user.cpf} onClick={() => void save(user.cpf)} type="button"><span><strong>{user.name}</strong><small>{maskCpf(user.cpf)}</small></span><b>{savingCpf === user.cpf ? 'Persistindo...' : 'Selecionar'}</b></button>) : <p className="operation-empty">Todos os viajantes já possuem assento.</p>}
         </div>
         <footer className="operation-modal__footer"><button disabled={savingCpf !== null} onClick={onClose} type="button">Cancelar</button></footer>
       </section>

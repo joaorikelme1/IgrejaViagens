@@ -47,8 +47,8 @@ describe('buildTravelerDashboard', () => {
     })
 
     expect(result.seats).toEqual([
-      { busId: 'bus-1', floor: 1, seatNumbers: [45] },
-      { busId: 'bus-2', floor: 2, seatNumbers: [2] },
+      { busId: 'bus-1', busName: 'Ônibus 1', floor: 1, seatNumbers: [45] },
+      { busId: 'bus-2', busName: 'Ônibus não configurado', floor: 2, seatNumbers: [2] },
     ])
     expect(result.warnings).toEqual(
       expect.arrayContaining([

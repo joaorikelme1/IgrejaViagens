@@ -13,6 +13,7 @@ import {
 } from '../../operations/lib/familyAssignments'
 import type { HotelConfig } from '../../operations/model/operationTypes'
 import type { BusConfig } from '../../trips/model/tripTypes'
+import { busDisplayName } from '../../trips/lib/busDisplayName'
 import type {
   AssistantContext,
   AssistantIntent,
@@ -34,8 +35,8 @@ function namesForCpfs(context: AssistantContext, cpfs: string[]) {
   return cpfs.map((cpf) => byCpf.get(stripCpf(cpf)) ?? cpf)
 }
 
-function busName(bus: BusConfig) {
-  return bus.label?.trim() || `Ônibus ${String(bus.id)}`
+function busName(bus: BusConfig, index = 0) {
+  return busDisplayName(bus, index)
 }
 
 function hotelCapacity(hotel: HotelConfig) {
@@ -154,10 +155,10 @@ export function buildAssistantPlan(intent: AssistantIntent, context: AssistantCo
     const remaining = context.seats.filter((seat) => !familyCpfs.includes(stripCpf(seat.userCpf)))
     const result = assignFamiliesToSeats([targetBus], remaining, context.users, familyCpfs, context.trip.id)
     if (result.assignedCount < familyCpfs.length) {
-      return clarification('Não há assentos suficientes', `A família possui ${familyCpfs.length} integrante(s), mas ${busName(targetBus)} não possui vagas suficientes.`, ['Libere assentos nesse ônibus ou escolha outro veículo.'], result.warnings)
+      return clarification('Não há assentos suficientes', `A família possui ${familyCpfs.length} integrante(s), mas ${busName(targetBus, context.buses.indexOf(targetBus))} não possui vagas suficientes.`, ['Libere assentos nesse ônibus ou escolha outro veículo.'], result.warnings)
     }
     return {
-      title: `Mover família para ${busName(targetBus)}`,
+      title: `Mover família para ${busName(targetBus, context.buses.indexOf(targetBus))}`,
       summary: `${familyCpfs.length} integrante(s) serão movidos para assentos próximos no mesmo ônibus.`,
       details: namesForCpfs(context, familyCpfs),
       warnings: result.warnings,

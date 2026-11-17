@@ -28,6 +28,7 @@ export interface TravelerDashboardSource {
 
 export interface TravelerSeatGroup {
   busId: string
+  busName: string
   floor: number
   seatNumbers: number[]
 }

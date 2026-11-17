@@ -7,7 +7,7 @@ export function SeatInfo({ seats }: { seats: TravelerSeatGroup[] }) {
     <span className="ticket-multiline">
       {seats.map((seat) => (
         <span key={`${seat.busId}-${seat.floor}`}>
-          Ônibus {seat.busId} · Piso {seat.floor} · Assento(s){' '}
+          {seat.busName} · Piso {seat.floor} · Assento(s){' '}
           {seat.seatNumbers.join(', ')}
         </span>
       ))}

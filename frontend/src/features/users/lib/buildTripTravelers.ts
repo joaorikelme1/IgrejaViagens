@@ -1,4 +1,6 @@
 import { stripCpf } from '../../../shared/validation/cpf'
+import { busDisplayName } from '../../trips/lib/busDisplayName'
+import type { BusConfig } from '../../trips/model/tripTypes'
 import type {
   ReceiptSummary,
   SystemUser,
@@ -29,6 +31,7 @@ function roomType(type: string) {
 export function buildTripTravelers(
   travelerCpfs: string[],
   source: TripTravelerSource,
+  buses: BusConfig[] = [],
 ): TripTravelerRow[] {
   const memberCpfs = new Set(travelerCpfs.map(stripCpf))
 
@@ -70,7 +73,11 @@ export function buildTripTravelers(
       const seatLabel = [...seatGroups.entries()]
         .map(([key, numbers]) => {
           const [busId, floor] = key.split(':')
-          return `Ônibus ${busId} · Piso ${floor} · ${numbers.sort((a, b) => a - b).join(', ')}`
+          const busIndex = buses.findIndex((bus) => String(bus.id) === busId)
+          const name = busIndex >= 0
+            ? busDisplayName(buses[busIndex], busIndex)
+            : `Ônibus ${busId}`
+          return `${name} · Piso ${floor} · ${numbers.sort((a, b) => a - b).join(', ')}`
         })
         .join('; ')
 
