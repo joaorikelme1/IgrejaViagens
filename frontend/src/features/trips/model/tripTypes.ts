@@ -1,5 +1,9 @@
 export interface BusConfig {
   id: string | number
+  label?: string
+  company?: string
+  plate?: string
+  driverName?: string
   floors: number
   seatsFloor1: number
   seatsFloor2: number

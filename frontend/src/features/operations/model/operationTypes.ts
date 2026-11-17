@@ -12,8 +12,10 @@ export interface HotelRoomConfig {
 
 export interface HotelConfig {
   [key: string]: unknown
+  address?: string
   id: OperationId
   name: string
+  notes?: string
   rooms: HotelRoomConfig[]
 }
 

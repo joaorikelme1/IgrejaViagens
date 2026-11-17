@@ -46,7 +46,7 @@ describe('operações de transporte', () => {
       seatsFloor2: 0,
       seats: 25,
     })
-    expect(String(created.id)).toMatch(/^bus_/)
+    expect(String(created.id)).toMatch(/^[0-9a-f-]{36}$/i)
     expect(removed.map((item) => item.id)).toEqual([7])
   })
 

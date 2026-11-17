@@ -30,7 +30,7 @@ export function RoomForm({
   const submit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
     const normalizedName = name.trim()
-    const normalizedCapacity = Math.min(100, Math.max(1, Math.trunc(capacity) || 1))
+    const normalizedCapacity = Math.max(1, Math.trunc(capacity) || 1)
     if (!normalizedName) {
       setError('Informe o número ou nome do quarto.')
       return
@@ -60,7 +60,7 @@ export function RoomForm({
             {error ? <p className="form-message is-error operation-wide" role="alert">{error}</p> : null}
             <label className="operation-field operation-wide">Número ou nome<input disabled={saving} onChange={(event) => setName(event.currentTarget.value)} value={name} /></label>
             <label className="operation-field">Tipo<select disabled={saving} onChange={(event) => { const next = event.currentTarget.value; setType(next); if (capacities[next]) setCapacity(capacities[next]) }} value={capacities[type] ? type : 'custom'}><option value="single">Individual</option><option value="double">Duplo</option><option value="family">Familiar</option><option value="custom">Personalizado</option></select></label>
-            <label className="operation-field">Capacidade<input disabled={saving || Boolean(capacities[type])} max="100" min="1" onChange={(event) => setCapacity(Number(event.currentTarget.value))} type="number" value={capacity} /></label>
+            <label className="operation-field">Capacidade<input disabled={saving || Boolean(capacities[type])} min="1" onChange={(event) => setCapacity(Number(event.currentTarget.value))} type="number" value={capacity} /></label>
           </div>
           <footer className="operation-modal__footer"><button disabled={saving} onClick={onClose} type="button">Cancelar</button><button className="is-primary" disabled={saving} type="submit">{saving ? 'Salvando...' : 'Salvar quarto'}</button></footer>
         </form>

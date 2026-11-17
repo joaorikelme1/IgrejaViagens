@@ -29,6 +29,14 @@ export const navigationByRole: Record<UserRole, NavigationSection[]> = {
           requiresTrip: true,
         },
         {
+          label: 'Assistente',
+          path: '/admin/assistente',
+          icon: 'assistant',
+          pageTitle: 'Assistente administrativo',
+          description: 'Comandos rápidos, consultas e operações com confirmação.',
+          requiresTrip: true,
+        },
+        {
           label: 'Minha passagem',
           path: '/admin/minha-passagem',
           icon: 'plane',

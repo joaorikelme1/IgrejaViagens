@@ -8,12 +8,12 @@ interface BusEditorProps {
 }
 
 function createBus(buses: BusConfig[]): BusConfig {
-  const numericIds = buses
-    .map((bus) => Number(bus.id))
-    .filter((id) => Number.isInteger(id) && id > 0)
-
   return {
-    id: numericIds.length ? Math.max(...numericIds) + 1 : `bus_${Date.now()}`,
+    id: crypto.randomUUID(),
+    label: `Ônibus ${buses.length + 1}`,
+    company: '',
+    plate: '',
+    driverName: '',
     floors: 1,
     seatsFloor1: 44,
     seatsFloor2: 0,
@@ -66,6 +66,38 @@ export function BusEditor({
               </button>
             </header>
             <div className="bus-card__fields">
+              <label>
+                <span>Identificação</span>
+                <input
+                  aria-label={`Identificação do ônibus ${index + 1}`}
+                  onChange={(event) => updateBus(index, { label: event.target.value })}
+                  value={bus.label ?? ''}
+                />
+              </label>
+              <label>
+                <span>Empresa</span>
+                <input
+                  aria-label={`Empresa do ônibus ${index + 1}`}
+                  onChange={(event) => updateBus(index, { company: event.target.value })}
+                  value={bus.company ?? ''}
+                />
+              </label>
+              <label>
+                <span>Motorista</span>
+                <input
+                  aria-label={`Motorista do ônibus ${index + 1}`}
+                  onChange={(event) => updateBus(index, { driverName: event.target.value })}
+                  value={bus.driverName ?? ''}
+                />
+              </label>
+              <label>
+                <span>Placa</span>
+                <input
+                  aria-label={`Placa do ônibus ${index + 1}`}
+                  onChange={(event) => updateBus(index, { plate: event.target.value.toUpperCase() })}
+                  value={bus.plate ?? ''}
+                />
+              </label>
               <label>
                 <span>Pisos do ônibus {index + 1}</span>
                 <select

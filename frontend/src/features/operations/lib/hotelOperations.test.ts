@@ -22,7 +22,7 @@ const hotels: HotelConfig[] = [{
 describe('operações de hotel', () => {
   it('faz CRUD de hotel preservando ID, quartos e campos desconhecidos', () => {
     const created = addHotel(hotels, { id: 'hotel-new', name: 'Hotel Novo' })
-    const edited = updateHotel(created, 91, 'Hotel Renomeado')
+    const edited = updateHotel(created, 91, { name: 'Hotel Renomeado' })
     const removed = removeHotel(edited, 'hotel-new')
 
     expect(edited[0]).toMatchObject({

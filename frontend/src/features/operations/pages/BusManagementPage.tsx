@@ -5,7 +5,6 @@ import {
   deleteSeats,
   loadTransportSource,
   saveBusStructure,
-  saveSeatRecord,
   saveTripSeatAssignments,
 } from '../api/operationsApi'
 import { BusEditorModal } from '../components/BusEditorModal'
@@ -20,7 +19,7 @@ import {
   updateBus,
 } from '../lib/transportOperations'
 import { createUniqueId } from '../lib/hotelOperations'
-import { assignFamiliesToSeats } from '../lib/familyAssignments'
+import { assignFamiliesToSeats, familyForTraveler } from '../lib/familyAssignments'
 import type { SeatRecord, TransportSource } from '../model/operationTypes'
 import './operations.css'
 
@@ -98,16 +97,21 @@ function BusManagementContent({ trip }: { trip: Trip }) {
       `seat_${trip.id}_${assigning.busId}_${assigning.floor}_${assigning.seatNumber}`,
       source.seats.map((seat) => seat.id),
     )
-    const saved = await saveSeatRecord({
+    const anchor: SeatRecord = {
       busId: assigning.busId,
       floor: assigning.floor,
       id,
       seatNumber: assigning.seatNumber,
       tripId: trip.id,
       userCpf: cpf,
-    })
-    setSource({ ...source, seats: [...source.seats, saved] })
-    setFeedback(`Assento ${assigning.seatNumber} atribuído após persistência.`)
+    }
+    const current = [...source.seats.filter((seat) => seat.userCpf !== cpf), anchor]
+    const family = familyForTraveler(source.users, trip.travelerCpfs, cpf)
+    const result = assignFamiliesToSeats(buses, current, source.users, family, trip.id)
+    const saved = await saveTripSeatAssignments(trip.id, result.records)
+    setSource({ ...source, seats: saved })
+    const relatives = Math.max(0, result.assignedCount)
+    setFeedback(`Assento ${assigning.seatNumber} atribuído. ${relatives ? `${relatives} familiar(es) também foram acomodados nas proximidades.` : ''} ${result.warnings.join(' ')}`.trim())
   }
 
   const confirmDelete = async () => {
@@ -180,14 +184,14 @@ function BusManagementContent({ trip }: { trip: Trip }) {
   return (
     <div className="operations-page">
       <header className="operations-intro"><div><span>Transporte</span><h2>Ônibus de {trip.name}</h2><p>Configuração dos veículos e distribuição de assentos por piso.</p></div><button className="operation-primary" onClick={() => setEditing({ bus: createBus(buses), isNew: true })} type="button">Cadastrar ônibus</button></header>
-      <aside className="operation-info">O mapa apresenta somente os lugares destinados aos passageiros. Assentos nunca são descartados silenciosamente ao editar a capacidade.</aside>
+      <aside className="operation-info">O mapa apresenta somente os lugares destinados aos passageiros. Estruturas, assentos e grupos familiares são preservados em cada alteração.</aside>
       <div className="operation-auto-actions"><button disabled={autoAssigning || buses.length === 0 || conflicts.length > 0} onClick={() => void autoAssignFamilies()} type="button">{autoAssigning ? 'Distribuindo...' : 'Distribuir famílias automaticamente'}</button></div>
       {feedback ? <p className="form-message is-success" role="status">{feedback}</p> : null}
       {conflicts.length ? <section className="operation-conflicts" role="alert"><h3>Inconsistências de assentos ({conflicts.length})</h3><ul>{conflicts.map((conflict) => <li key={conflict.key}>{conflict.message}</li>)}</ul></section> : null}
 
       {buses.length ? <div className="bus-list">{buses.map((bus) => {
         const busSeats = source.seats.filter((seat) => seat.busId === String(bus.id))
-        return <section className={`transport-bus-card ${bus.floors === 2 ? 'has-two-floors' : ''}`} key={String(bus.id)}><header><div className="transport-bus-card__info"><h3>Ônibus {String(bus.id)}</h3><small>{bus.floors} piso(s) · {bus.seats} assentos · {busSeats.length} atribuição(ões)</small></div><div className="transport-bus-card__actions"><button onClick={() => setEditing({ bus, isNew: false })} type="button">Editar ônibus</button><button className="is-danger-link" onClick={() => setDeleting({ kind: 'bus', bus })} type="button">Excluir ônibus</button></div></header><SeatMap bus={bus} onSeat={(floor, seatNumber, occupant) => { if (occupant) setDeleting({ kind: 'seat', seat: occupant }); else setAssigning({ busId: String(bus.id), floor, seatNumber }) }} seats={busSeats} users={source.users} /></section>
+        return <section className={`transport-bus-card ${bus.floors === 2 ? 'has-two-floors' : ''}`} key={String(bus.id)}><header><div className="transport-bus-card__info"><h3>{bus.label || `Ônibus ${String(bus.id)}`}</h3><small>{[bus.company, bus.driverName ? `Motorista: ${bus.driverName}` : '', bus.plate].filter(Boolean).join(' · ') || 'Dados operacionais não informados'}</small><small>{bus.floors} piso(s) · {bus.seats} assentos · {busSeats.length} atribuição(ões)</small></div><div className="transport-bus-card__actions"><button onClick={() => setEditing({ bus, isNew: false })} type="button">Editar ônibus</button><button className="is-danger-link" onClick={() => setDeleting({ kind: 'bus', bus })} type="button">Excluir ônibus</button></div></header><SeatMap bus={bus} onSeat={(floor, seatNumber, occupant) => { if (occupant) setDeleting({ kind: 'seat', seat: occupant }); else setAssigning({ busId: String(bus.id), floor, seatNumber }) }} seats={busSeats} users={source.users} /></section>
       })}</div> : <section className="operation-empty-state"><h3>Nenhum ônibus configurado</h3><p>Cadastre o primeiro veículo sem alterar os demais dados da viagem.</p></section>}
 
       {editing ? <BusEditorModal bus={editing.bus} isNew={editing.isNew} onClose={() => setEditing(null)} onSave={saveBus} /> : null}

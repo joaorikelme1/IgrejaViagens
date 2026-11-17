@@ -64,18 +64,16 @@ export function parseHotels(value: string): HotelConfig[] {
   }
 }
 
-export function createUniqueId(prefix: string, existing: OperationId[]) {
-  const base = `${prefix}_${Date.now()}`
-  let candidate = base
-  let suffix = 1
+export function createUniqueId(_prefix: string, existing: OperationId[]) {
   const used = new Set(existing.map(String))
-  while (used.has(candidate)) candidate = `${base}_${suffix++}`
+  let candidate = crypto.randomUUID()
+  while (used.has(candidate)) candidate = crypto.randomUUID()
   return candidate
 }
 
 export function addHotel(
   hotels: HotelConfig[],
-  hotel: Pick<HotelConfig, 'id' | 'name'>,
+  hotel: Pick<HotelConfig, 'id' | 'name'> & Partial<Pick<HotelConfig, 'address' | 'notes'>>,
 ) {
   return [...hotels, { ...hotel, rooms: [] }]
 }
@@ -83,11 +81,11 @@ export function addHotel(
 export function updateHotel(
   hotels: HotelConfig[],
   hotelId: OperationId,
-  name: string,
+  patch: Pick<HotelConfig, 'name'> & Partial<Pick<HotelConfig, 'address' | 'notes'>>,
 ) {
   return hotels.map((hotel) =>
     String(hotel.id) === String(hotelId)
-      ? { ...hotel, name: name.trim(), rooms: hotel.rooms }
+      ? { ...hotel, ...patch, name: patch.name.trim(), rooms: hotel.rooms }
       : hotel,
   )
 }

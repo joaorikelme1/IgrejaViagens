@@ -14,6 +14,10 @@ export function busFloorCapacity(bus: BusConfig, floor: number) {
 export function createBus(buses: BusConfig[]): BusConfig {
   return {
     id: createUniqueId('bus', buses.map((bus) => bus.id)),
+    label: `Ônibus ${buses.length + 1}`,
+    company: '',
+    plate: '',
+    driverName: '',
     floors: 1,
     seatsFloor1: 44,
     seatsFloor2: 0,

@@ -23,7 +23,7 @@ export function ChildrenFields({
   onKidsChange,
 }: ChildrenFieldsProps) {
   const updateCount = (countValue: number) => {
-    const count = Math.min(10, Math.max(1, Math.trunc(countValue) || 1))
+    const count = Math.max(1, Math.trunc(countValue) || 1)
     onKidsChange(Array.from({ length: count }, (_, index) => kids[index] ?? ''))
   }
 
@@ -45,7 +45,6 @@ export function ChildrenFields({
             Quantidade de filhos
             <input
               disabled={disabled}
-              max="10"
               min="1"
               onChange={(event) => updateCount(Number(event.currentTarget.value))}
               type="number"

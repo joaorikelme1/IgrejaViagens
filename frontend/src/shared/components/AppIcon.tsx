@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react'
 
 export type AppIconName =
+  | 'assistant'
   | 'arrowRight'
   | 'building'
   | 'bus'
@@ -31,6 +32,12 @@ interface AppIconProps {
 
 export function AppIcon({ name }: AppIconProps) {
   const paths: Record<AppIconName, ReactNode> = {
+    assistant: (
+      <>
+        <rect x="4" y="6" width="16" height="13" rx="4" />
+        <path d="M9 11h.01M15 11h.01M9 15h6M12 6V3M8 3h8" />
+      </>
+    ),
     arrowRight: (
       <>
         <path d="M5 12h14" />

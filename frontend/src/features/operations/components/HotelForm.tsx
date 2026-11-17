@@ -8,9 +8,11 @@ export function HotelForm({
 }: {
   hotel?: HotelConfig
   onClose: () => void
-  onSave: (name: string) => Promise<void>
+  onSave: (value: Pick<HotelConfig, 'name' | 'address' | 'notes'>) => Promise<void>
 }) {
   const [name, setName] = useState(hotel?.name ?? '')
+  const [address, setAddress] = useState(hotel?.address ?? '')
+  const [notes, setNotes] = useState(hotel?.notes ?? '')
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -24,7 +26,7 @@ export function HotelForm({
     setSaving(true)
     setError(null)
     try {
-      await onSave(normalized)
+      await onSave({ name: normalized, address: address.trim(), notes: notes.trim() })
       onClose()
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : 'Não foi possível salvar o hotel.')
@@ -44,6 +46,8 @@ export function HotelForm({
           <div className="operation-modal__body">
             {error ? <p className="form-message is-error" role="alert">{error}</p> : null}
             <label className="operation-field">Nome do hotel<input disabled={saving} onChange={(event) => setName(event.currentTarget.value)} value={name} /></label>
+            <label className="operation-field">Endereço<input disabled={saving} onChange={(event) => setAddress(event.currentTarget.value)} value={address} /></label>
+            <label className="operation-field">Observações<textarea disabled={saving} onChange={(event) => setNotes(event.currentTarget.value)} rows={3} value={notes} /></label>
           </div>
           <footer className="operation-modal__footer"><button disabled={saving} onClick={onClose} type="button">Cancelar</button><button className="is-primary" disabled={saving} type="submit">{saving ? 'Salvando...' : 'Salvar hotel'}</button></footer>
         </form>

@@ -24,11 +24,11 @@ export function toSeat(value: unknown, index = 0): SeatRecord | null {
 }
 
 export async function saveHotelStructure(tripId: string, hotels: HotelConfig[]) {
-  unwrap(await supabase.rpc('replace_hotels', { p_trip_id: tripId, p_hotels: hotels.map((hotel) => ({ name: hotel.name, rooms: hotel.rooms.map((room) => ({ name: room.name, room_type: room.type, capacity: room.capacity })) })) }))
+  unwrap(await supabase.rpc('replace_hotels', { p_trip_id: tripId, p_hotels: hotels.map((hotel) => ({ id: String(hotel.id), name: hotel.name, address: hotel.address ?? '', notes: hotel.notes ?? '', rooms: hotel.rooms.map((room) => ({ id: String(room.id), name: room.name, room_type: room.type, capacity: room.capacity })) })) }))
 }
 
 export async function saveBusStructure(tripId: string, buses: BusConfig[]) {
-  unwrap(await supabase.rpc('replace_buses', { p_trip_id: tripId, p_buses: buses.map((bus) => ({ floors: bus.floors, seats_floor1: bus.seatsFloor1, seats_floor2: bus.seatsFloor2 })) }))
+  unwrap(await supabase.rpc('replace_buses', { p_trip_id: tripId, p_buses: buses.map((bus) => ({ id: String(bus.id), label: bus.label ?? '', company: bus.company ?? '', plate: bus.plate ?? '', driver_name: bus.driverName ?? '', floors: bus.floors, seats_floor1: bus.seatsFloor1, seats_floor2: bus.seatsFloor2 })) }))
 }
 
 export async function loadHotelSource(tripId: string): Promise<HotelSource> {
@@ -39,13 +39,15 @@ export async function loadHotelSource(tripId: string): Promise<HotelSource> {
 
 export async function saveRoomRecord(room: RoomRecord) {
   const row = unwrap<{ id: string }>(await supabase.from('rooms').upsert({ id: room.id, trip_id: room.tripId, hotel_id: room.hotelId, name: room.name, room_type: room.type, capacity: room.capacity }).select('id, trip_id, hotel_id, name, room_type, capacity').single())
-  await saveTripRoomAssignments(room.tripId, [{ ...room, id: row.id }])
   return { ...room, id: row.id }
 }
 
 export async function saveTripRoomAssignments(tripId: string, rooms: RoomRecord[]) {
-  const profiles = unwrap<{ id: string; cpf: string }[]>(await supabase.from('profiles').select('id, cpf').in('cpf', [...new Set(rooms.flatMap((room) => room.occupants))]))
+  const cpfs = [...new Set(rooms.flatMap((room) => room.occupants))]
+  const profiles = cpfs.length ? unwrap<{ id: string; cpf: string }[]>(await supabase.from('profiles').select('id, cpf').in('cpf', cpfs)) : []
   const idByCpf = new Map(profiles.map((profile) => [profile.cpf, profile.id]))
+  const missing = cpfs.filter((cpf) => !idByCpf.has(cpf))
+  if (missing.length) throw new Error(`Viajante(s) não encontrado(s): ${missing.join(', ')}.`)
   unwrap(await supabase.rpc('replace_room_assignments', { p_trip_id: tripId, p_rooms: rooms.map((room) => ({ id: room.id, occupants: room.occupants.map((cpf) => idByCpf.get(cpf)).filter(Boolean) })) }))
   return rooms
 }
@@ -58,11 +60,18 @@ export async function loadTransportSource(tripId: string): Promise<TransportSour
   return { seats: value.map(toSeat).filter((seat): seat is SeatRecord => seat !== null), users }
 }
 
-export async function saveSeatRecord(seat: SeatRecord) { const rows = await saveTripSeatAssignments(seat.tripId, [seat]); return rows[0] }
+export async function saveSeatRecord(seat: SeatRecord) {
+  const profile = unwrap<{ id: string }>(await supabase.from('profiles').select('id').eq('cpf', seat.userCpf).single())
+  const row = unwrap<unknown>(await supabase.from('seat_assignments').insert({ id: seat.id, trip_id: seat.tripId, bus_id: seat.busId, floor: seat.floor, seat_number: seat.seatNumber, traveler_id: profile.id }).select('id, trip_id, bus_id, floor, seat_number, profiles(cpf)').single())
+  return toSeat(row) ?? seat
+}
 
 export async function saveTripSeatAssignments(tripId: string, seats: SeatRecord[]) {
-  const profiles = unwrap<{ id: string; cpf: string }[]>(await supabase.from('profiles').select('id, cpf').in('cpf', [...new Set(seats.map((seat) => seat.userCpf))]))
+  const cpfs = [...new Set(seats.map((seat) => seat.userCpf))]
+  const profiles = cpfs.length ? unwrap<{ id: string; cpf: string }[]>(await supabase.from('profiles').select('id, cpf').in('cpf', cpfs)) : []
   const idByCpf = new Map(profiles.map((profile) => [profile.cpf, profile.id]))
+  const missing = cpfs.filter((cpf) => !idByCpf.has(cpf))
+  if (missing.length) throw new Error(`Viajante(s) não encontrado(s): ${missing.join(', ')}.`)
   unwrap(await supabase.rpc('replace_seat_assignments', { p_trip_id: tripId, p_seats: seats.map((seat) => ({ busId: seat.busId, floor: seat.floor, seatNumber: seat.seatNumber, travelerId: idByCpf.get(seat.userCpf) })) }))
   return seats
 }

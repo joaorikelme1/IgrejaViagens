@@ -82,6 +82,28 @@ export function buildFamilyGroups(users: SystemUser[], travelerCpfs: string[]) {
   return groups.sort((left, right) => right.length - left.length)
 }
 
+export function familyForTraveler(
+  users: SystemUser[],
+  travelerCpfs: string[],
+  travelerCpf: string,
+) {
+  const cpf = stripCpf(travelerCpf)
+  return buildFamilyGroups(users, travelerCpfs).find((group) => group.includes(cpf)) ?? [cpf]
+}
+
+export function familiesForTravelers(
+  users: SystemUser[],
+  travelerCpfs: string[],
+  selectedCpfs: string[],
+) {
+  const selected = new Set(selectedCpfs.map(stripCpf))
+  return [...new Set(
+    buildFamilyGroups(users, travelerCpfs)
+      .filter((group) => group.some((cpf) => selected.has(cpf)))
+      .flat(),
+  )]
+}
+
 export function assignFamiliesToRooms(
   hotels: HotelConfig[],
   currentRooms: RoomRecord[],

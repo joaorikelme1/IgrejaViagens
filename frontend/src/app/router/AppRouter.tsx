@@ -1,6 +1,7 @@
 import { Route, Routes } from 'react-router'
 import { AdminDashboardPage } from '../../features/admin/dashboard/pages/AdminDashboardPage'
 import { TripSettingsPage } from '../../features/admin/settings/pages/TripSettingsPage'
+import { AdminAssistantPage } from '../../features/assistant/pages/AdminAssistantPage'
 import { TravelerDashboardPage } from '../../features/traveler/dashboard/pages/TravelerDashboardPage'
 import { BusManagementPage } from '../../features/operations/pages/BusManagementPage'
 import { HotelManagementPage } from '../../features/operations/pages/HotelManagementPage'
@@ -21,6 +22,7 @@ export function AppRouter() {
       <Route element={<RequireRole role="admin" />}>
         <Route element={<ProtectedRoleLayout role="admin" />}>
           <Route path="/admin" element={<AdminDashboardPage />} />
+          <Route path="/admin/assistente" element={<AdminAssistantPage />} />
           <Route
             path="/admin/minha-passagem"
             element={<TravelerDashboardPage />}

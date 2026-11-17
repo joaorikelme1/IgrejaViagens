@@ -16,6 +16,7 @@ const mocks = vi.hoisted(() => ({
   reloadTrips: vi.fn(),
   saveHotelStructure: vi.fn(),
   saveRoomRecord: vi.fn(),
+  saveTripRoomAssignments: vi.fn(),
   useTrip: vi.fn(),
 }))
 
@@ -25,6 +26,7 @@ vi.mock('../api/operationsApi', () => ({
   loadHotelSource: mocks.loadHotelSource,
   saveHotelStructure: mocks.saveHotelStructure,
   saveRoomRecord: mocks.saveRoomRecord,
+  saveTripRoomAssignments: mocks.saveTripRoomAssignments,
 }))
 
 const cpfs = ['11144477735', '52998224725']
@@ -97,6 +99,10 @@ describe('HotelManagementPage', () => {
       savedRoom = room
       return Promise.resolve(room)
     })
+    mocks.saveTripRoomAssignments.mockImplementation((_tripId: string, rooms: RoomRecord[]) => {
+      savedRoom = rooms[0] ?? null
+      return Promise.resolve(rooms)
+    })
     mocks.deleteRoomRecords.mockResolvedValue(undefined)
   })
 
@@ -130,7 +136,7 @@ describe('HotelManagementPage', () => {
     expect(screen.getByRole('checkbox', { name: /Ana/ })).toBeChecked()
     await userEvent.click(screen.getByRole('checkbox', { name: /Bruno/ }))
     await userEvent.click(screen.getByRole('button', { name: 'Salvar ocupantes' }))
-    await waitFor(() => expect(mocks.saveRoomRecord).toHaveBeenCalled())
+    await waitFor(() => expect(mocks.saveTripRoomAssignments).toHaveBeenCalled())
 
     expect(savedRoom?.id).toBe('room-legacy')
     expect(savedRoom?.occupants).toEqual(cpfs)

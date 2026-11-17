@@ -12,6 +12,7 @@ const mocks = vi.hoisted(() => ({
   reloadTrips: vi.fn(),
   saveBusStructure: vi.fn(),
   saveSeatRecord: vi.fn(),
+  saveTripSeatAssignments: vi.fn(),
   useTrip: vi.fn(),
 }))
 
@@ -21,6 +22,7 @@ vi.mock('../api/operationsApi', () => ({
   loadTransportSource: mocks.loadTransportSource,
   saveBusStructure: mocks.saveBusStructure,
   saveSeatRecord: mocks.saveSeatRecord,
+  saveTripSeatAssignments: mocks.saveTripSeatAssignments,
 }))
 
 const cpf = '11144477735'
@@ -71,12 +73,12 @@ const occupiedSeat: SeatRecord = {
 }
 const source: TransportSource = { seats: [occupiedSeat], users: [user] }
 let savedBuses: BusConfig[] | null = null
-let savedSeat: SeatRecord | null = null
+let savedSeats: SeatRecord[] = []
 
 describe('BusManagementPage', () => {
   beforeEach(() => {
     savedBuses = null
-    savedSeat = null
+    savedSeats = []
     Object.values(mocks).forEach((mock) => mock.mockReset())
     mocks.useTrip.mockReturnValue({ activeTrip: trip, reloadTrips: mocks.reloadTrips })
     mocks.loadTransportSource.mockResolvedValue(source)
@@ -84,9 +86,10 @@ describe('BusManagementPage', () => {
       savedBuses = value
       return Promise.resolve()
     })
-    mocks.saveSeatRecord.mockImplementation((seat: SeatRecord) => {
-      savedSeat = seat
-      return Promise.resolve(seat)
+    mocks.saveSeatRecord.mockImplementation((seat: SeatRecord) => Promise.resolve(seat))
+    mocks.saveTripSeatAssignments.mockImplementation((_tripId: string, seats: SeatRecord[]) => {
+      savedSeats = seats
+      return Promise.resolve(seats)
     })
     mocks.deleteSeats.mockResolvedValue(undefined)
   })
@@ -119,24 +122,25 @@ describe('BusManagementPage', () => {
 
     expect(savedBuses?.[0].id).toBe('bus-existing')
     expect(savedBuses?.[0].legacyField).toBe('preservado')
-    expect(String(savedBuses?.[1].id)).toMatch(/^bus_/)
+    expect(String(savedBuses?.[1].id)).toMatch(/^[0-9a-f-]{36}$/i)
   })
 
-  it('associa administrador participante a assento livre somente após persistência', async () => {
+  it('move participante para assento livre preservando a distribuição completa', async () => {
     render(<BusManagementPage />)
     const freeSeats = await screen.findAllByRole('button', {
       name: 'Assento 1, livre',
     })
     await userEvent.click(freeSeats[0])
     await userEvent.click(screen.getByRole('button', { name: /Ana.*Selecionar/ }))
-    await waitFor(() => expect(mocks.saveSeatRecord).toHaveBeenCalled())
+    await waitFor(() => expect(mocks.saveTripSeatAssignments).toHaveBeenCalled())
 
-    expect(savedSeat).toMatchObject({
+    expect(savedSeats).toContainEqual(expect.objectContaining({
       busId: 'bus-existing',
       floor: 1,
       seatNumber: 1,
       userCpf: cpf,
-    })
+    }))
+    expect(savedSeats).not.toContainEqual(expect.objectContaining({ floor: 2, seatNumber: 2, userCpf: cpf }))
   })
 
   it('não reduz pisos quando isso apagaria assento atribuído', async () => {

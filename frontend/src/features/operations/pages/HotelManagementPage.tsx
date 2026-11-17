@@ -13,7 +13,7 @@ import { OperationConfirmModal } from '../components/OperationConfirmModal'
 import { RoomAssignment } from '../components/RoomAssignment'
 import { RoomCard } from '../components/RoomCard'
 import { RoomForm, type RoomFormValue } from '../components/RoomForm'
-import { assignFamiliesToRooms } from '../lib/familyAssignments'
+import { assignFamiliesToRooms, familiesForTravelers } from '../lib/familyAssignments'
 import {
   addHotel,
   addRoom,
@@ -30,6 +30,7 @@ import type {
   HotelConfig,
   HotelRoomConfig,
   HotelSource,
+  RoomRecord,
 } from '../model/operationTypes'
 import './operations.css'
 
@@ -88,15 +89,15 @@ function HotelManagementContent({ trip }: { trip: Trip }) {
     setFeedback(message)
   }
 
-  const saveHotel = async (name: string) => {
+  const saveHotel = async (value: Pick<HotelConfig, 'name' | 'address' | 'notes'>) => {
     if (hotelForm === 'new') {
       const id = createUniqueId('hotel', hotels.map((hotel) => hotel.id))
-      await persistHotels(addHotel(hotels, { id, name }), 'Hotel cadastrado com sucesso.')
+      await persistHotels(addHotel(hotels, { id, ...value }), 'Hotel cadastrado com sucesso.')
       return
     }
     if (hotelForm) {
       await persistHotels(
-        updateHotel(hotels, hotelForm.id, name),
+        updateHotel(hotels, hotelForm.id, value),
         'Hotel atualizado sem alterar seus quartos.',
       )
     }
@@ -147,7 +148,7 @@ function HotelManagementContent({ trip }: { trip: Trip }) {
     const current = source.rooms.find(
       (room) => room.id === String(assignment.room?.id),
     )
-    const saved = await saveRoomRecord({
+    const target: RoomRecord = {
       ...current,
       capacity: assignment.room.capacity,
       hotelId: String(assignment.hotel.id),
@@ -156,14 +157,18 @@ function HotelManagementContent({ trip }: { trip: Trip }) {
       occupants,
       tripId: trip.id,
       type: assignment.room.type,
-    })
+    }
+    const currentRooms = source.rooms.some((room) => room.id === target.id)
+      ? source.rooms.map((room) => room.id === target.id ? target : room)
+      : [...source.rooms, target]
+    const families = familiesForTravelers(source.users, trip.travelerCpfs, occupants)
+    const result = assignFamiliesToRooms(hotels, currentRooms, source.users, families, trip.id)
+    const saved = await saveTripRoomAssignments(trip.id, result.records)
     setSource({
       ...source,
-      rooms: source.rooms.some((room) => room.id === saved.id)
-        ? source.rooms.map((room) => room.id === saved.id ? saved : room)
-        : [...source.rooms, saved],
+      rooms: saved,
     })
-    setFeedback('Distribuição persistida com sucesso.')
+    setFeedback(`Distribuição persistida. ${result.assignedCount ? `${result.assignedCount} familiar(es) também foram acomodados.` : ''} ${result.warnings.join(' ')}`.trim())
   }
 
   const confirmDelete = async () => {
@@ -224,14 +229,14 @@ function HotelManagementContent({ trip }: { trip: Trip }) {
   return (
     <div className="operations-page">
       <header className="operations-intro"><div><span>Hospedagem</span><h2>Hotéis de {trip.name}</h2><p>Quartos, capacidades e distribuição dos viajantes.</p></div><button className="operation-primary" onClick={() => setHotelForm('new')} type="button">Cadastrar hotel</button></header>
-      <aside className="operation-info">Os dados de hotel ficam temporariamente na viagem; as ocupações continuam no contrato separado de quartos.</aside>
+      <aside className="operation-info">Hotéis e quartos mantêm identificadores estáveis. Alterações preservam ocupantes e a distribuição familiar existente.</aside>
       <div className="operation-auto-actions"><button disabled={autoAssigning || !hotels.some((hotel) => hotel.rooms.length) || conflicts.length > 0} onClick={() => void autoAssignFamilies()} type="button">{autoAssigning ? 'Acomodando...' : 'Acomodar famílias automaticamente'}</button></div>
       {feedback ? <p className="form-message is-success" role="status">{feedback}</p> : null}
       {conflicts.length ? <section className="operation-conflicts" role="alert"><h3>Conflitos de ocupação ({conflicts.length})</h3><ul>{conflicts.map((conflict) => <li key={conflict.key}>{conflict.message}</li>)}</ul></section> : null}
 
       {hotels.length ? <div className="hotel-list">{hotels.map((hotel) => (
         <section className="hotel-card" key={String(hotel.id)}>
-          <header><div><h3>{hotel.name}</h3><small>{hotel.rooms.length} quarto(s)</small></div><div><button onClick={() => setHotelForm(hotel)} type="button">Editar hotel</button><button className="is-danger-link" onClick={() => setDeleting({ kind: 'hotel', hotel })} type="button">Excluir hotel</button><button className="operation-primary" onClick={() => setRoomForm({ hotel })} type="button">Adicionar quarto</button></div></header>
+          <header><div><h3>{hotel.name}</h3><small>{hotel.address ? `${hotel.address} · ` : ''}{hotel.rooms.length} quarto(s)</small></div><div><button onClick={() => setHotelForm(hotel)} type="button">Editar hotel</button><button className="is-danger-link" onClick={() => setDeleting({ kind: 'hotel', hotel })} type="button">Excluir hotel</button><button className="operation-primary" onClick={() => setRoomForm({ hotel })} type="button">Adicionar quarto</button></div></header>
           {hotel.rooms.length ? <div className="room-grid">{hotel.rooms.map((room) => <RoomCard key={String(room.id)} occupants={roomOccupants(source.rooms, room.id)} onAssign={() => setAssignment({ hotel, room })} onDelete={() => setDeleting({ kind: 'room', hotel, room })} onEdit={() => setRoomForm({ hotel, room })} room={room} users={source.users} />)}</div> : <p className="operation-empty">Nenhum quarto cadastrado neste hotel.</p>}
         </section>
       ))}</div> : <section className="operation-empty-state"><h3>Nenhum hotel configurado</h3><p>Cadastre o primeiro hotel sem alterar os demais dados da viagem.</p></section>}

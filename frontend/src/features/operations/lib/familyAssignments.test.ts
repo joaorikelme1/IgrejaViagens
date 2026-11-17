@@ -4,6 +4,7 @@ import {
   assignFamiliesToRooms,
   assignFamiliesToSeats,
   buildFamilyGroups,
+  familyForTraveler,
 } from './familyAssignments'
 
 function user(
@@ -44,6 +45,7 @@ const travelers = [father.cpf, mother.cpf, child.cpf]
 describe('familyAssignments', () => {
   it('forma um único grupo por vínculos de cônjuge e filhos', () => {
     expect(buildFamilyGroups([father, mother, child], travelers)).toEqual([travelers])
+    expect(familyForTraveler([father, mother, child], travelers, child.cpf)).toEqual(travelers)
   })
 
   it('reconhece um vínculo legado somente quando o nome é único', () => {

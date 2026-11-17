@@ -15,7 +15,11 @@ export interface TripFormValues {
 
 function createDefaultBus(): BusConfig {
   return {
-    id: 1,
+    id: crypto.randomUUID(),
+    label: 'Ônibus 1',
+    company: '',
+    plate: '',
+    driverName: '',
     floors: 1,
     seatsFloor1: 44,
     seatsFloor2: 0,
