@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { AssistantContext } from '../model/assistantTypes'
-import { buildAssistantPlan } from './assistantPlanner'
+import { buildAssistantPlan, executeAssistantOperation } from './assistantPlanner'
 
 const cpfs = ['11144477735', '52998224725', '12345678909']
 const context: AssistantContext = {
@@ -30,6 +30,41 @@ describe('assistantPlanner', () => {
     expect(rooms.warnings).toEqual([])
   })
 
+  it('gera uma única prévia para distribuir quartos e assentos pendentes', () => {
+    const plan = buildAssistantPlan({ kind: 'distribute_allocations' }, context)
+    expect(plan.operation).toMatchObject({ kind: 'save_allocations' })
+    expect(plan.summary).toContain('3 pessoa(s) receberão quarto')
+    expect(plan.summary).toContain('3 pessoa(s) receberão assento')
+    expect(plan.details).toContain('Famílias serão mantidas juntas ou próximas sempre que houver capacidade.')
+  })
+
+  it('preserva alocações existentes no pedido combinado', () => {
+    const current = {
+      ...context,
+      rooms: [{ id: 'room-1', tripId: 'trip-1', hotelId: 'hotel-1', name: '101', type: 'family', capacity: 3, occupants: [cpfs[0]] }],
+      seats: [{ id: 'seat-1', tripId: 'trip-1', busId: 'bus-1', floor: 1, seatNumber: 1, userCpf: cpfs[0] }],
+    }
+    const plan = buildAssistantPlan({ kind: 'distribute_allocations' }, current)
+    expect(plan.summary).toContain('2 pessoa(s) receberão quarto')
+    expect(plan.summary).toContain('2 pessoa(s) receberão assento')
+    expect(plan.operation?.kind).toBe('save_allocations')
+    if (plan.operation?.kind !== 'save_allocations') return
+    expect(plan.operation.rooms[0].occupants).toContain(cpfs[0])
+    expect(plan.operation.seats.some((seat) => seat.userCpf === cpfs[0])).toBe(true)
+  })
+
+  it('não oferece execução combinada quando falta estrutura', () => {
+    const plan = buildAssistantPlan(
+      { kind: 'distribute_allocations' },
+      { ...context, buses: [], hotels: [] },
+    )
+    expect(plan.operation).toBeUndefined()
+    expect(plan.details).toEqual(expect.arrayContaining([
+      'Cadastre ao menos um ônibus.',
+      'Cadastre ao menos um quarto de hotel.',
+    ]))
+  })
+
   it('move uma família inteira para o ônibus solicitado', () => {
     const plan = buildAssistantPlan({ kind: 'move_family_bus', family: 'Silva', bus: '1' }, context)
     expect(plan.operation?.kind).toBe('save_seats')
@@ -40,5 +75,10 @@ describe('assistantPlanner', () => {
     const plan = buildAssistantPlan({ kind: 'move_family_bus', family: 'Silva', bus: '1' }, { ...context, buses: [{ ...context.buses[0], seatsFloor1: 2, seats: 2 }] })
     expect(plan.operation).toBeUndefined()
     expect(plan.summary).toMatch(/não possui vagas suficientes/i)
+  })
+
+  it('bloqueia execução local para quem não é administrador', async () => {
+    await expect(executeAssistantOperation('trip-1', { kind: 'save_seats', seats: [] }, 'traveler'))
+      .rejects.toThrow('Somente administradores')
   })
 })

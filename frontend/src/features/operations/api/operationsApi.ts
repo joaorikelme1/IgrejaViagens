@@ -76,6 +76,40 @@ export async function saveTripSeatAssignments(tripId: string, seats: SeatRecord[
   return seats
 }
 
+export async function saveTripAllocations(
+  tripId: string,
+  rooms: RoomRecord[],
+  seats: SeatRecord[],
+) {
+  const cpfs = [...new Set([
+    ...rooms.flatMap((room) => room.occupants),
+    ...seats.map((seat) => seat.userCpf),
+  ])]
+  const profiles = cpfs.length
+    ? unwrap<{ id: string; cpf: string }[]>(
+        await supabase.from('profiles').select('id, cpf').in('cpf', cpfs),
+      )
+    : []
+  const idByCpf = new Map(profiles.map((profile) => [profile.cpf, profile.id]))
+  const missing = cpfs.filter((cpf) => !idByCpf.has(cpf))
+  if (missing.length) throw new Error(`Viajante(s) não encontrado(s): ${missing.join(', ')}.`)
+
+  unwrap(await supabase.rpc('replace_trip_allocations', {
+    p_trip_id: tripId,
+    p_rooms: rooms.map((room) => ({
+      id: room.id,
+      occupants: room.occupants.map((cpf) => idByCpf.get(cpf)).filter(Boolean),
+    })),
+    p_seats: seats.map((seat) => ({
+      busId: seat.busId,
+      floor: seat.floor,
+      seatNumber: seat.seatNumber,
+      travelerId: idByCpf.get(seat.userCpf),
+    })),
+  }))
+  return { rooms, seats }
+}
+
 export async function deleteSeats(tripId: string, predicate: (seat: SeatRecord) => boolean) {
   const current = await loadTransportSource(tripId)
   const remaining = current.seats.filter((seat) => !predicate(seat))

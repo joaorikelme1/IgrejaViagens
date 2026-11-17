@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react'
 import { AppIcon } from '../../../shared/components/AppIcon'
+import { useAuth } from '../../auth/hooks/useAuth'
 import { loadHotelSource, loadTransportSource } from '../../operations/api/operationsApi'
 import { parseHotels } from '../../operations/lib/hotelOperations'
 import { useTrip } from '../../trips/hooks/useTrip'
@@ -14,6 +15,7 @@ const suggestions = [
   'Quais hotéis estão lotados?',
   'Distribua as pessoas pelos ônibus disponíveis',
   'Organize as pessoas nos quartos dos hotéis',
+  'Atribua quartos e assentos a quem ainda não possui',
 ]
 
 function message(role: AssistantMessage['role'], text: string, extra: Partial<AssistantMessage> = {}): AssistantMessage {
@@ -30,6 +32,7 @@ function loadHistory(key: string) {
 }
 
 export function AdminAssistantPage() {
+  const { user } = useAuth()
   const { activeTrip, reloadTrips } = useTrip()
   const [context, setContext] = useState<AssistantContext | null>(null)
   const [messages, setMessages] = useState<AssistantMessage[]>([])
@@ -105,9 +108,14 @@ export function AdminAssistantPage() {
 
   const confirm = async () => {
     if (!pending?.operation || !context) return
+    if (user?.role !== 'admin') {
+      setMessages((current) => [...current, message('assistant', 'Somente administradores podem executar operações do assistente.', { tone: 'warning' })])
+      setPending(null)
+      return
+    }
     setProcessing(true)
     try {
-      await executeAssistantOperation(context.trip.id, pending.operation)
+      await executeAssistantOperation(context.trip.id, pending.operation, user.role)
       const operation = pending.operation
       setContext((current) => current ? {
         ...current,
@@ -115,6 +123,7 @@ export function AdminAssistantPage() {
         hotels: operation.kind === 'save_hotels' ? operation.hotels : current.hotels,
         rooms: operation.kind === 'save_rooms' ? operation.rooms : current.rooms,
         seats: operation.kind === 'save_seats' ? operation.seats : current.seats,
+        ...(operation.kind === 'save_allocations' ? { rooms: operation.rooms, seats: operation.seats } : {}),
       } : current)
       reloadTrips()
       setMessages((current) => [...current, message('assistant', `${pending.title} concluído com sucesso.`, { tone: 'success' })])

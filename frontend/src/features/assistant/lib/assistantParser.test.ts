@@ -5,6 +5,9 @@ describe('assistantParser', () => {
   it('reconhece consultas e distribuições em linguagem natural', () => {
     expect(parseAssistantCommand('Quantas pessoas ainda não possuem ônibus definido?')).toEqual({ intent: { kind: 'query_unassigned_seats' } })
     expect(parseAssistantCommand('Organize essas pessoas nos quartos dos hotéis')).toEqual({ intent: { kind: 'distribute_rooms' } })
+    expect(parseAssistantCommand('Atribua quartos e assentos no onibus a pessoas que ainda não tem quarto e assento')).toEqual({ intent: { kind: 'distribute_allocations' } })
+    expect(parseAssistantCommand('Aloque em quartos e ônibus todos que estão sem')).toEqual({ intent: { kind: 'distribute_allocations' } })
+    expect(parseAssistantCommand('Quem ainda não tem quarto nem assento?')).toEqual({ intent: { kind: 'query_unassigned_allocations' } })
   })
 
   it('interpreta cadastro de hotéis em lote', () => {
@@ -28,5 +31,6 @@ describe('assistantParser', () => {
 
   it('solicita dados quando o comando está incompleto', () => {
     expect(parseAssistantCommand('Cadastre estes hotéis').clarification).toMatch(/formato/i)
+    expect(parseAssistantCommand('Distribua as pessoas').clarification).toMatch(/assentos, quartos ou ambos/i)
   })
 })

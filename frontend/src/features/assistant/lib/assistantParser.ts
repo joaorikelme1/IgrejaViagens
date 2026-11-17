@@ -78,11 +78,22 @@ export function parseAssistantCommand(input: string): ParsedAssistantCommand {
   const text = normalized(input)
   if (!text) return { clarification: 'Digite uma solicitação ou escolha uma das sugestões.' }
 
-  if (/(quant|quais|liste|mostre).*(sem|nao possuem|não possuem).*(onibus|ônibus|assento)/.test(text)) return { intent: { kind: 'query_unassigned_seats' } }
-  if (/(quant|quais|liste|mostre).*(sem|nao possuem|não possuem).*(quarto|hotel)/.test(text)) return { intent: { kind: 'query_unassigned_rooms' } }
-  if (/(quais|liste|mostre).*(hoteis|hotéis).*(lotad)/.test(text)) return { intent: { kind: 'query_full_hotels' } }
-  if (/(distribua|organize|acomode).*(onibus|ônibus|assento)/.test(text)) return { intent: { kind: 'distribute_seats' } }
-  if (/(distribua|organize|acomode).*(quarto|hotel)/.test(text)) return { intent: { kind: 'distribute_rooms' } }
+  const mentionsSeats = /\b(onibus|assentos?|poltronas?|lugares?|transporte)\b/.test(text)
+  const mentionsRooms = /\b(quartos?|hoteis?|hospedagem|acomodacoes?)\b/.test(text)
+  const asksQuestion = /\b(quantas?|quais|quem|liste|listar|mostre|mostrar|informe|informar)\b/.test(text)
+  const mentionsMissing = /\b(sem|faltando|pendentes?)\b/.test(text)
+    || /\bnao\s+(?:tem|tenham|possui|possuem|esta|estao)\b/.test(text)
+    || /\bainda\s+nao\b/.test(text)
+  const allocates = /\b(atribua|atribuir|atribui|aloque|alocar|distribua|distribuir|organize|organizar|acomode|acomodar|coloque|colocar|defina|definir|designe|designar|reserve|reservar)\b/.test(text)
+
+  if (/(quais|liste|mostre|informe).*(hoteis?).*(lotad|sem vagas?)/.test(text)) return { intent: { kind: 'query_full_hotels' } }
+  if (asksQuestion && mentionsMissing && mentionsSeats && mentionsRooms) return { intent: { kind: 'query_unassigned_allocations' } }
+  if (asksQuestion && mentionsMissing && mentionsSeats) return { intent: { kind: 'query_unassigned_seats' } }
+  if (asksQuestion && mentionsMissing && mentionsRooms) return { intent: { kind: 'query_unassigned_rooms' } }
+
+  if (allocates && mentionsSeats && mentionsRooms) return { intent: { kind: 'distribute_allocations' } }
+  if (allocates && mentionsSeats) return { intent: { kind: 'distribute_seats' } }
+  if (allocates && mentionsRooms) return { intent: { kind: 'distribute_rooms' } }
 
   const familyMove = text.match(/(?:mude|mova|transfira)\s+(?:a\s+)?familia\s+(.+?)\s+para\s+(?:o\s+)?onibus\s+(.+)$/)
   if (familyMove) return { intent: { kind: 'move_family_bus', family: familyMove[1].trim(), bus: familyMove[2].trim() } }
@@ -105,5 +116,9 @@ export function parseAssistantCommand(input: string): ParsedAssistantCommand {
     return { intent: { kind: 'create_buses', buses } }
   }
 
-  return { clarification: 'Não reconheci esse comando. Posso cadastrar hotéis e ônibus, distribuir famílias, mover grupos ou consultar pessoas sem quarto/ônibus.' }
+  if (allocates) {
+    return { clarification: 'Você quer distribuir assentos, quartos ou ambos? Por exemplo: “Atribua quartos e assentos a quem ainda não possui”.' }
+  }
+
+  return { clarification: 'Não reconheci esse comando. Posso cadastrar hotéis e ônibus, atribuir quartos e assentos — inclusive no mesmo pedido —, mover famílias ou consultar pessoas sem alocação.' }
 }

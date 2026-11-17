@@ -22,9 +22,11 @@ export interface AssistantBusDraft {
 export type AssistantIntent =
   | { kind: 'query_unassigned_seats' }
   | { kind: 'query_unassigned_rooms' }
+  | { kind: 'query_unassigned_allocations' }
   | { kind: 'query_full_hotels' }
   | { kind: 'distribute_seats' }
   | { kind: 'distribute_rooms' }
+  | { kind: 'distribute_allocations' }
   | { kind: 'create_hotels'; hotels: AssistantHotelDraft[] }
   | { kind: 'create_buses'; buses: AssistantBusDraft[] }
   | { kind: 'move_family_bus'; family: string; bus: string }
@@ -39,6 +41,7 @@ export type AssistantOperation =
   | { kind: 'save_buses'; buses: BusConfig[] }
   | { kind: 'save_rooms'; rooms: RoomRecord[] }
   | { kind: 'save_seats'; seats: SeatRecord[] }
+  | { kind: 'save_allocations'; rooms: RoomRecord[]; seats: SeatRecord[] }
 
 export interface AssistantPlan {
   details: string[]

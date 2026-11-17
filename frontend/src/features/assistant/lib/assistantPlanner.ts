@@ -2,6 +2,7 @@ import { stripCpf } from '../../../shared/validation/cpf'
 import {
   saveBusStructure,
   saveHotelStructure,
+  saveTripAllocations,
   saveTripRoomAssignments,
   saveTripSeatAssignments,
 } from '../../operations/api/operationsApi'
@@ -14,6 +15,7 @@ import {
 import type { HotelConfig } from '../../operations/model/operationTypes'
 import type { BusConfig } from '../../trips/model/tripTypes'
 import { busDisplayName } from '../../trips/lib/busDisplayName'
+import type { UserRole } from '../../auth/model/authTypes'
 import type {
   AssistantContext,
   AssistantIntent,
@@ -78,6 +80,21 @@ export function buildAssistantPlan(intent: AssistantIntent, context: AssistantCo
     return clarification('Passageiros sem quarto', pending.length ? `${pending.length} pessoa(s) ainda não possuem quarto definido.` : 'Todos os viajantes possuem quarto definido.', pending.map((user) => user.name))
   }
 
+  if (intent.kind === 'query_unassigned_allocations') {
+    const seated = new Set(context.seats.map((seat) => stripCpf(seat.userCpf)))
+    const roomed = new Set(context.rooms.flatMap((room) => room.occupants.map(stripCpf)))
+    const withoutSeat = travelers.filter((user) => !seated.has(stripCpf(user.cpf)))
+    const withoutRoom = travelers.filter((user) => !roomed.has(stripCpf(user.cpf)))
+    return clarification(
+      'Pendências de acomodação e transporte',
+      `${withoutRoom.length} pessoa(s) sem quarto e ${withoutSeat.length} pessoa(s) sem assento.`,
+      [
+        `Sem quarto: ${withoutRoom.length ? withoutRoom.map((user) => user.name).join(', ') : 'ninguém'}`,
+        `Sem assento: ${withoutSeat.length ? withoutSeat.map((user) => user.name).join(', ') : 'ninguém'}`,
+      ],
+    )
+  }
+
   if (intent.kind === 'query_full_hotels') {
     const full = context.hotels.flatMap((hotel) => {
       const roomIds = new Set(hotel.rooms.map((room) => String(room.id)))
@@ -109,6 +126,48 @@ export function buildAssistantPlan(intent: AssistantIntent, context: AssistantCo
       details: [`Quartos disponíveis: ${context.hotels.reduce((total, hotel) => total + hotel.rooms.length, 0)}`],
       warnings: result.warnings,
       operation: result.assignedCount ? { kind: 'save_rooms', rooms: result.records } : undefined,
+    }
+  }
+
+  if (intent.kind === 'distribute_allocations') {
+    const blockers: string[] = []
+    if (!context.buses.length) blockers.push('Cadastre ao menos um ônibus.')
+    if (!context.hotels.some((hotel) => hotel.rooms.length)) blockers.push('Cadastre ao menos um quarto de hotel.')
+    if (blockers.length) {
+      return clarification(
+        'Configuração incompleta',
+        'Não é possível distribuir quartos e assentos enquanto a estrutura da viagem estiver incompleta.',
+        blockers,
+      )
+    }
+
+    const roomResult = assignFamiliesToRooms(
+      context.hotels,
+      context.rooms,
+      context.users,
+      travelerCpfs,
+      context.trip.id,
+    )
+    const seatResult = assignFamiliesToSeats(
+      context.buses,
+      context.seats,
+      context.users,
+      travelerCpfs,
+      context.trip.id,
+    )
+    const changed = roomResult.assignedCount + seatResult.assignedCount
+    return {
+      title: 'Distribuir quartos e assentos',
+      summary: `${roomResult.assignedCount} pessoa(s) receberão quarto e ${seatResult.assignedCount} pessoa(s) receberão assento, preservando as alocações existentes.`,
+      details: [
+        `Ocupações de quartos após a operação: ${roomResult.records.reduce((total, room) => total + room.occupants.length, 0)}`,
+        `Assentos após a operação: ${seatResult.records.length}`,
+        'Famílias serão mantidas juntas ou próximas sempre que houver capacidade.',
+      ],
+      warnings: [...new Set([...roomResult.warnings, ...seatResult.warnings])],
+      operation: changed
+        ? { kind: 'save_allocations', rooms: roomResult.records, seats: seatResult.records }
+        : undefined,
     }
   }
 
@@ -194,9 +253,17 @@ export function buildAssistantPlan(intent: AssistantIntent, context: AssistantCo
   }
 }
 
-export async function executeAssistantOperation(tripId: string, operation: AssistantOperation) {
+export async function executeAssistantOperation(
+  tripId: string,
+  operation: AssistantOperation,
+  actorRole: UserRole,
+) {
+  if (actorRole !== 'admin') {
+    throw new Error('Somente administradores podem executar operações do assistente.')
+  }
   if (operation.kind === 'save_hotels') await saveHotelStructure(tripId, operation.hotels)
   if (operation.kind === 'save_buses') await saveBusStructure(tripId, operation.buses)
   if (operation.kind === 'save_rooms') await saveTripRoomAssignments(tripId, operation.rooms)
   if (operation.kind === 'save_seats') await saveTripSeatAssignments(tripId, operation.seats)
+  if (operation.kind === 'save_allocations') await saveTripAllocations(tripId, operation.rooms, operation.seats)
 }

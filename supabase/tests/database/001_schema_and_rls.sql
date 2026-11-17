@@ -1,5 +1,5 @@
 begin;
-select plan(24);
+select plan(26);
 
 select has_table('public', 'profiles', 'profiles exists');
 select has_table('public', 'trips', 'trips exists');
@@ -8,6 +8,11 @@ select has_table('public', 'room_occupants', 'room occupants is relational');
 select has_table('public', 'seat_assignments', 'seat assignments is relational');
 select has_function('public', 'add_trip_traveler', 'membership RPC exists');
 select has_function('public', 'replace_seat_assignments', 'seat RPC exists');
+select has_function('public', 'replace_trip_allocations', array['uuid', 'jsonb', 'jsonb'], 'atomic room and seat RPC exists');
+select ok(
+  position('ASSERT_ADMIN' in upper(pg_get_functiondef('public.replace_trip_allocations(uuid,jsonb,jsonb)'::regprocedure))) > 0,
+  'combined allocation RPC enforces administrator access'
+);
 select ok((select relrowsecurity from pg_class where oid = 'public.payments'::regclass), 'payments RLS is enabled');
 select ok(exists(
   select 1
