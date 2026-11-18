@@ -21,6 +21,7 @@
 .assistant-message.is-success { border-color: #86b99a; background: #f1faf4; }
 .assistant-message__meta { display: flex; justify-content: space-between; gap: 1rem; font-size: .62rem; opacity: .75; }
 .assistant-message p { margin: .35rem 0 0; font-size: .78rem; line-height: 1.55; }
+.assistant-message__text { overflow-wrap: anywhere; white-space: pre-wrap; }
 .assistant-message ul { margin: .55rem 0 0; padding-left: 1.1rem; font-size: .72rem; line-height: 1.55; }
 .assistant-warnings { margin-top: .55rem; padding: .5rem .6rem; border-radius: 8px; background: rgb(224 164 50 / 12%); color: #704c0d; }
 .assistant-warnings p { margin: 0; font-size: .7rem; }

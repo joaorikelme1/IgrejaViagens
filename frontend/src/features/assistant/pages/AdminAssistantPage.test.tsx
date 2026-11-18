@@ -57,7 +57,7 @@ describe('AdminAssistantPage', () => {
         Promise.resolve({ rooms, seats }),
     )
     mocks.interpretAssistantCommand.mockImplementation((command: string) => {
-      if (/liste/i.test(command)) return Promise.resolve({ answer: 'Lista de viajantes: Ana Silva.' })
+      if (/liste/i.test(command)) return Promise.resolve({ answer: 'Viajantes:\n\n- Ana Silva' })
       if (/quanta/i.test(command)) return Promise.resolve({ intent: { kind: 'query_unassigned_seats' } })
       if (/quartos e assentos/i.test(command)) return Promise.resolve({ intent: { kind: 'distribute_allocations' } })
       return Promise.resolve({ intent: { kind: 'distribute_seats' } })
@@ -110,7 +110,11 @@ describe('AdminAssistantPage', () => {
     await userEvent.type(input, 'Liste os viajantes da viagem')
     await userEvent.click(screen.getByRole('button', { name: /Enviar comando/ }))
 
-    expect(await screen.findByText('Lista de viajantes: Ana Silva.')).toBeInTheDocument()
+    await waitFor(() => expect(
+      screen.getAllByText(/Ana Silva/).find((element) =>
+        element.classList.contains('assistant-message__text'),
+      ),
+    ).toBeDefined())
     expect(screen.queryByRole('button', { name: 'Confirmar e executar' })).not.toBeInTheDocument()
   })
 })
