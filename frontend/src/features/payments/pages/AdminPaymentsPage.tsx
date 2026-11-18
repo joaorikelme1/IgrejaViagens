@@ -71,11 +71,10 @@ function AdminPaymentsContent({ trip }: { trip: Trip }) {
   const receiptOwnerName = receiptPayment
     ? rows.find((row) => row.userCpf === receiptPayment.userCpf)?.name
     : null
-  const usersWithoutPayment = (source?.users ?? []).filter(
-    (user) =>
-      trip.travelerCpfs.includes(user.cpf) &&
-      !rows.some((row) => row.userCpf === user.cpf && row.payment),
+  const tripUsers = (source?.users ?? []).filter((user) =>
+    trip.travelerCpfs.includes(user.cpf),
   )
+  const usersWithoutPayment = tripUsers
 
   const generateReport = () => {
     if (!summary) return
@@ -111,7 +110,14 @@ function AdminPaymentsContent({ trip }: { trip: Trip }) {
 
   const persist = async (mutation: PaymentMutation) => {
     setFeedback(null)
-    const saved = await savePayment(mutation)
+    const existing = source?.payments.find(
+      (payment) => payment.tripId === mutation.tripId && payment.userCpf === mutation.userCpf,
+    )
+    const saved = await savePayment(
+      existing && !mutation.id
+        ? { ...mutation, id: existing.id, receipts: existing.receipts }
+        : mutation,
+    )
     replaceLocalPayment(saved)
     setFeedback('Pagamento persistido com sucesso.')
   }
@@ -227,11 +233,12 @@ function AdminPaymentsContent({ trip }: { trip: Trip }) {
 
       {formPayment !== undefined ? (
         <PaymentForm
+          existingPayments={source.payments.filter((payment) => payment.tripId === trip.id)}
           onClose={() => setFormPayment(undefined)}
           onSubmit={persist}
           payment={formPayment ?? undefined}
           tripId={trip.id}
-          users={formPayment ? source.users.filter((user) => user.cpf === formPayment.userCpf) : usersWithoutPayment}
+          users={formPayment ? source.users.filter((user) => user.cpf === formPayment.userCpf) : tripUsers}
         />
       ) : null}
       {receiptPayment ? (

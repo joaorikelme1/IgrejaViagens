@@ -4,6 +4,7 @@ import type { SystemUser } from '../../users/model/userTypes'
 import type { PaymentMutation, PaymentRecord } from '../model/paymentTypes'
 
 interface PaymentFormProps {
+  existingPayments?: PaymentRecord[]
   onClose: () => void
   onSubmit: (mutation: PaymentMutation) => Promise<void>
   payment?: PaymentRecord
@@ -12,6 +13,7 @@ interface PaymentFormProps {
 }
 
 export function PaymentForm({
+  existingPayments = [],
   onClose,
   onSubmit,
   payment,
@@ -29,6 +31,18 @@ export function PaymentForm({
   const [locked, setLocked] = useState(payment?.locked ?? false)
   const [isSaving, setIsSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const selectedExistingPayment = payment ?? existingPayments.find(
+    (item) => item.userCpf === userCpf,
+  )
+
+  const selectTraveler = (cpf: string) => {
+    setUserCpf(cpf)
+    const existing = existingPayments.find((item) => item.userCpf === cpf)
+    setTotalInstallments(Math.max(1, existing?.totalInstallments ?? 1))
+    setPaidInstallments(Math.max(0, existing?.paidInstallments ?? 0))
+    setDueDay(Math.max(1, existing?.dueDay ?? 10))
+    setLocked(existing?.locked ?? false)
+  }
 
   const submit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
@@ -41,10 +55,10 @@ export function PaymentForm({
       setIsSaving(true)
       await onSubmit({
         dueDay,
-        id: payment?.id,
+        id: selectedExistingPayment?.id,
         locked,
         paidInstallments,
-        receipts: payment?.receipts ?? {},
+        receipts: selectedExistingPayment?.receipts ?? {},
         totalInstallments,
         tripId,
         userCpf,
@@ -85,7 +99,7 @@ export function PaymentForm({
               Viajante
               <select
                 disabled={isSaving || Boolean(payment)}
-                onChange={(event) => setUserCpf(event.currentTarget.value)}
+                onChange={(event) => selectTraveler(event.currentTarget.value)}
                 value={userCpf}
               >
                 {users.map((user) => (

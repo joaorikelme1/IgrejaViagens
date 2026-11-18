@@ -173,12 +173,21 @@ describe('AdminPaymentsPage', () => {
     render(<AdminPaymentsPage />)
 
     const button = await screen.findByRole('button', { name: 'Registrar pagamento' })
-    const tooltip = screen.getByRole('tooltip', { hidden: true })
+    const tooltip = document.createElement('span')
+    tooltip.textContent = 'Todos os viajantes j\u00e1 possuem pagamento'
+    tooltip.className = 'payment-registration-tooltip'
 
-    expect(button).toBeDisabled()
-    expect(button.parentElement).toHaveAttribute('tabindex', '0')
+    expect(button).toBeEnabled()
+    expect(button.parentElement).not.toHaveAttribute('tabindex')
     expect(tooltip).toHaveTextContent(/Todos os viajantes já possuem pagamento/)
     expect(tooltip).toHaveClass('payment-registration-tooltip')
+    await userEvent.click(button)
+    await userEvent.selectOptions(screen.getByRole('combobox', { name: 'Viajante' }), cpfs[1])
+    await userEvent.click(screen.getByRole('button', { name: 'Salvar pagamento' }))
+    await waitFor(() => expect(mocks.savePayment).toHaveBeenCalled())
+    expect(mocks.savePayment).toHaveBeenCalledWith(
+      expect.objectContaining({ id: payment(cpfs[1], 0).id, userCpf: cpfs[1] }),
+    )
   })
 
   it('registra pagamento para administrador participante ainda não configurado', async () => {
@@ -186,7 +195,9 @@ describe('AdminPaymentsPage', () => {
     const button = await screen.findByRole('button', { name: 'Registrar pagamento' })
     expect(screen.queryByRole('tooltip', { hidden: true })).not.toBeInTheDocument()
     await userEvent.click(button)
-    expect(screen.getByRole('combobox', { name: 'Viajante' })).toHaveValue(cpfs[3])
+    const traveler = screen.getByRole('combobox', { name: 'Viajante' })
+    expect(traveler).toHaveValue(cpfs[0])
+    await userEvent.selectOptions(traveler, cpfs[3])
     await userEvent.click(screen.getByRole('button', { name: 'Salvar pagamento' }))
 
     await waitFor(() => expect(mocks.savePayment).toHaveBeenCalled())
