@@ -13,7 +13,7 @@ import { OperationConfirmModal } from '../components/OperationConfirmModal'
 import { RoomAssignment } from '../components/RoomAssignment'
 import { RoomCard } from '../components/RoomCard'
 import { RoomForm, type RoomFormValue } from '../components/RoomForm'
-import { assignFamiliesToRooms, familiesForTravelers } from '../lib/familyAssignments'
+import { assignFamiliesToRooms } from '../lib/familyAssignments'
 import {
   addHotel,
   addRoom,
@@ -161,9 +161,8 @@ function HotelManagementContent({ trip }: { trip: Trip }) {
     const currentRooms = source.rooms.some((room) => room.id === target.id)
       ? source.rooms.map((room) => room.id === target.id ? target : room)
       : [...source.rooms, target]
-    const families = familiesForTravelers(source.users, trip.travelerCpfs, occupants)
-    const result = assignFamiliesToRooms(hotels, currentRooms, source.users, families, trip.id)
-    const saved = await saveTripRoomAssignments(trip.id, result.records)
+    const result = { assignedCount: 0, warnings: [] as string[] }
+    const saved = await saveTripRoomAssignments(trip.id, currentRooms)
     setSource({
       ...source,
       rooms: saved,
