@@ -68,4 +68,33 @@ describe('ReceiptViewer', () => {
 
     expect(onUpload).toHaveBeenCalledWith('2', file)
   })
+
+  it('exibe comprovante de imagem servido por URL assinada', () => {
+    render(
+      <ReceiptViewer
+        onClose={vi.fn()}
+        payment={{
+          ...payment,
+          receipts: {
+            1: {
+              ...payment.receipts[1],
+              data: 'https://cpkmrzqohcithmsbczmg.supabase.co/storage/v1/object/sign/payment-receipts/arquivo.jpg?token=assinatura',
+              filename: 'comprovante.jpg',
+              type: 'image/jpeg',
+            },
+          },
+        }}
+        title="Comprovantes"
+      />,
+    )
+
+    expect(screen.getByRole('img', { name: 'Comprovante da parcela 1' })).toHaveAttribute(
+      'src',
+      expect.stringContaining('/storage/v1/object/sign/payment-receipts/arquivo.jpg'),
+    )
+    expect(screen.getByText('Baixar comprovante')).toHaveAttribute(
+      'href',
+      expect.stringContaining('token=assinatura'),
+    )
+  })
 })

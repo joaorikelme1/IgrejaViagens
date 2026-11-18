@@ -35,15 +35,17 @@ export function readReceiptFile(file: File) {
 
 export function safeReceiptData(receipt: PaymentReceipt) {
   const value = receipt.data.trim()
+  const isSignedUrl = /^https:\/\/[^\s]+$/i.test(value)
   if (
     receipt.type === 'application/pdf' &&
-    value.startsWith('data:application/pdf;base64,')
+    (value.startsWith('data:application/pdf;base64,') || isSignedUrl)
   ) {
     return { kind: 'pdf' as const, value }
   }
   if (
     receipt.type.startsWith('image/') &&
-    /^data:image\/(?:png|jpe?g|gif|webp);base64,/i.test(value)
+    (/^data:image\/(?:png|jpe?g|gif|webp);base64,/i.test(value) ||
+      isSignedUrl)
   ) {
     return { kind: 'image' as const, value }
   }
