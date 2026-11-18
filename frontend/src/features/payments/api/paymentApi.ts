@@ -27,14 +27,30 @@ async function profileId(cpf: string) { return (unwrap<{ id: string }>(await sup
 
 async function uploadReceipts(paymentId: string, receipts: Record<string, PaymentReceipt>) {
   for (const [installment, receipt] of Object.entries(receipts)) {
-    let path = `pending/${paymentId}/${installment}`
     if (receipt.data.startsWith('data:')) {
       const blob = await (await fetch(receipt.data)).blob()
       if (blob.size > 5_000_000) throw new Error('Comprovante excede 5 MB.')
-      path = `${paymentId}/${installment}-${crypto.randomUUID()}`
+      const path = `${paymentId}/${installment}-${crypto.randomUUID()}`
       unwrap(await supabase.storage.from('payment-receipts').upload(path, blob, { contentType: receipt.type || blob.type, upsert: true }))
+      unwrap(await supabase.from('payment_receipts').upsert({ payment_id: paymentId, installment: Number(installment), storage_path: path, file_name: receipt.filename, mime_type: receipt.type || 'application/octet-stream', note: receipt.note, status: receipt.status }, { onConflict: 'payment_id,installment' }))
+      continue
     }
-    unwrap(await supabase.from('payment_receipts').upsert({ payment_id: paymentId, installment: Number(installment), storage_path: path, file_name: receipt.filename, mime_type: receipt.type || 'application/octet-stream', note: receipt.note, status: receipt.status }, { onConflict: 'payment_id,installment' }))
+
+    // URLs returned by `createSignedUrl` are previews, not Storage paths. When
+    // approving or rejecting a receipt, keep its original storage_path intact.
+    if (!/^https:\/\/[^\s]+$/i.test(receipt.data)) {
+      throw new Error('O comprovante nÃ£o possui um arquivo vÃ¡lido para atualizar.')
+    }
+    unwrap(await supabase
+      .from('payment_receipts')
+      .update({
+        file_name: receipt.filename,
+        mime_type: receipt.type || 'application/octet-stream',
+        note: receipt.note,
+        status: receipt.status,
+      })
+      .eq('payment_id', paymentId)
+      .eq('installment', Number(installment)))
   }
 }
 

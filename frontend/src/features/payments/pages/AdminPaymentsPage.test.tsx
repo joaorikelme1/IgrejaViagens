@@ -262,6 +262,45 @@ describe('AdminPaymentsPage', () => {
     ).toBeInTheDocument()
   })
 
+  it('persiste a aprovaÃ§Ã£o sem substituir o arquivo assinado', async () => {
+    const receiptPayment = {
+      ...source.payments[0],
+      receipts: {
+        1: {
+          data: 'https://cpkmrzqohcithmsbczmg.supabase.co/storage/v1/object/sign/payment-receipts/arquivo.jpg?token=assinatura',
+          date: '2026-11-18',
+          filename: 'arquivo.jpg',
+          note: '',
+          status: 'pending' as const,
+          type: 'image/jpeg',
+        },
+      },
+    }
+    mocks.loadSource.mockResolvedValue({
+      ...source,
+      payments: [receiptPayment, ...source.payments.slice(1)],
+    })
+    render(<AdminPaymentsPage />)
+
+    await userEvent.click(
+      (await screen.findAllByRole('button', { name: 'Comprovantes' }))[0],
+    )
+    await userEvent.click(screen.getByRole('button', { name: 'Aprovar' }))
+
+    await waitFor(() => expect(mocks.savePayment).toHaveBeenCalledWith(
+      expect.objectContaining({
+        id: receiptPayment.id,
+        paidInstallments: 1,
+        receipts: {
+          1: expect.objectContaining({
+            data: expect.stringContaining('/storage/v1/object/sign/'),
+            status: 'approved',
+          }),
+        },
+      }),
+    ))
+  })
+
   it('exibe erro de carregamento da API', async () => {
     mocks.loadSource.mockRejectedValue(new Error('API indisponível'))
     render(<AdminPaymentsPage />)
