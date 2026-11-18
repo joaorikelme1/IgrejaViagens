@@ -41,12 +41,12 @@ export function AdminAssistantPage() {
   const [processing, setProcessing] = useState(false)
   const [loadError, setLoadError] = useState<string | null>(null)
   const endRef = useRef<HTMLDivElement>(null)
-  const historyKey = `igreja-viagens:assistant:${activeTrip?.id ?? 'none'}`
+  const historyKey = `igreja-viagens:assistant:v2:${activeTrip?.id ?? 'none'}`
 
   useEffect(() => {
     if (!activeTrip) return
     const stored = loadHistory(historyKey)
-    setMessages(stored.length ? stored : [message('assistant', `Olá! Estou pronto para administrar a viagem ${activeTrip.name}. Eu trabalho com regras locais e sempre apresento uma prévia antes de alterar dados.`)])
+    setMessages(stored.length ? stored : [message('assistant', `Olá! Sou o assistente com IA da viagem ${activeTrip.name}. Posso entender pedidos em linguagem natural e sempre mostrarei uma prévia antes de qualquer alteração.`)])
   }, [activeTrip, historyKey])
 
   useEffect(() => {
@@ -147,7 +147,7 @@ export function AdminAssistantPage() {
   return (
     <div className="assistant-page">
       <header className="assistant-hero">
-        <div className="assistant-hero__identity"><span className="assistant-avatar"><AppIcon name="assistant" /></span><div><span>Assistente administrativo</span><h2>Olá, posso organizar a viagem por você</h2><p>Comandos determinísticos, prévia obrigatória e execução segura no Supabase.</p></div></div>
+        <div className="assistant-hero__identity"><span className="assistant-avatar"><AppIcon name="assistant" /></span><div><span>Assistente com IA · Groq</span><h2>Olá, posso organizar a viagem por você</h2><p>Entendo pedidos em linguagem natural, preparo uma prévia e só executo após sua confirmação.</p></div></div>
         <button onClick={() => { setMessages([message('assistant', `Histórico limpo. Como posso ajudar na viagem ${activeTrip.name}?`)]); setPending(null) }} type="button">Limpar conversa</button>
       </header>
 
@@ -164,7 +164,7 @@ export function AdminAssistantPage() {
         <section aria-label="Conversa com o assistente" className="assistant-chat">
           <div className="assistant-messages" aria-live="polite">
             {messages.map((item) => <article className={`assistant-message is-${item.role} ${item.tone ? `is-${item.tone}` : ''}`} key={item.id}><div className="assistant-message__meta"><strong>{item.role === 'assistant' ? 'Assistente' : 'Você'}</strong><time>{new Date(item.createdAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</time></div><p>{item.text}</p>{item.details?.length ? <ul>{item.details.map((detail) => <li key={detail}>{detail}</li>)}</ul> : null}{item.warnings?.length ? <div className="assistant-warnings">{item.warnings.map((warning) => <p key={warning}>{warning}</p>)}</div> : null}</article>)}
-            {processing ? <article className="assistant-message is-assistant"><div className="assistant-processing"><span /><span /><span /></div><p>Executando a operação e validando os dados...</p></article> : null}
+            {processing ? <article className="assistant-message is-assistant"><div className="assistant-processing"><span /><span /><span /></div><p>A IA está analisando seu pedido e validando os dados...</p></article> : null}
             <div ref={endRef} />
           </div>
 
@@ -181,7 +181,7 @@ export function AdminAssistantPage() {
           <div className="assistant-suggestions">{suggestions.map((suggestion) => <button key={suggestion} onClick={() => setInput(suggestion)} type="button">{suggestion}</button>)}</div>
           <details><summary>Cadastro em lote</summary><p>Use uma linha por item:</p><code>Cadastre estes hotéis:{'\n'}Hotel Central | endereço=Rua A | quartos=101:2, 102:3</code><code>Cadastre estes ônibus:{'\n'}Executivo 1 | empresa=Viação Azul | motorista=João | placa=ABC1D23 | assentos=44</code></details>
           <details><summary>Movimentações</summary><code>Mude a família Silva para o ônibus 3</code><code>Transfira Ana Silva e João Silva para o hotel Central</code></details>
-          <div className="assistant-local-note"><AppIcon name="lock" /><p><strong>Sem inteligência artificial</strong><span>Todo comando é interpretado por regras locais e permissões administrativas.</span></p></div>
+          <div className="assistant-local-note"><AppIcon name="lock" /><p><strong>IA com execução protegida</strong><span>A Groq interpreta o pedido, mas nenhuma alteração é feita sem sua confirmação e as permissões do Supabase.</span></p></div>
         </aside>
       </div>
     </div>
