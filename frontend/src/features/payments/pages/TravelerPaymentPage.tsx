@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { useAuth } from '../../auth/hooks/useAuth'
 import { useTrip } from '../../trips/hooks/useTrip'
 import type { Trip } from '../../trips/model/tripTypes'
-import { listPayments, savePayment } from '../api/paymentApi'
+import { listPayments, savePayment, submitTravelerReceipt } from '../api/paymentApi'
 import { PaymentStatusBadge } from '../components/PaymentStatusBadge'
 import { ReceiptViewer } from '../components/ReceiptViewer'
 import { TravelerPaymentPlan } from '../components/TravelerPaymentPlan'
@@ -70,21 +70,14 @@ function TravelerPaymentContent({
     setUploading(installment)
     try {
       const data = await readReceiptFile(file)
-      const nextPayment: PaymentRecord = {
-        ...payment,
-        receipts: {
-          ...payment.receipts,
-          [installment]: {
-            data,
-            date: new Intl.DateTimeFormat('pt-BR').format(new Date()),
-            filename: file.name,
-            note: '',
-            status: 'pending',
-            type: file.type,
-          },
-        },
-      }
-      const saved = await savePayment(nextPayment)
+      const saved = await submitTravelerReceipt(payment, installment, {
+        data,
+        date: new Intl.DateTimeFormat('pt-BR').format(new Date()),
+        filename: file.name,
+        note: '',
+        status: 'pending',
+        type: file.type,
+      })
       setPayment(saved)
       setFeedback('Comprovante enviado e aguardando análise.')
     } catch (uploadError) {
@@ -147,11 +140,13 @@ function TravelerPaymentContent({
             {Array.from({ length: installmentCount }, (_, index) => {
               const installment = String(index + 1)
               const receipt = payment.receipts[installment]
+              const isPaid = Number(installment) <= progress.paidInstallments
               return (
                 <article key={installment}>
                   <span>{installment}</span>
                   <div><strong>Parcela {installment}</strong><small>{currency(installmentValue)} · vencimento dia {payment.dueDay}</small>{receipt?.note ? <small className="payment-warning">Motivo: {receipt.note}</small> : null}</div>
-                  <span className={`receipt-status is-${receipt?.status ?? 'none'}`}>{receipt ? receipt.status === 'approved' ? 'Aprovado' : receipt.status === 'rejected' ? 'Recusado' : 'Aguardando' : 'Sem comprovante'}</span>
+                  {isPaid ? <small className="payment-confirmed">Pagamento registrado</small> : null}
+                  <span className={`receipt-status is-${receipt?.status ?? 'none'}`}>{receipt ? receipt.status === 'approved' ? 'Confirmado pelo administrador' : receipt.status === 'rejected' ? 'Recusado' : 'Aguardando confirmação' : isPaid ? 'Paga' : 'Sem comprovante'}</span>
                   {receipt?.status !== 'approved' ? (
                     <label className="receipt-upload-button">
                       {uploading === installment ? 'Enviando...' : receipt ? 'Reenviar' : 'Anexar'}

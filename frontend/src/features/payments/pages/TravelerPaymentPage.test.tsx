@@ -8,6 +8,7 @@ const mocks = vi.hoisted(() => ({
   listPayments: vi.fn(),
   readReceiptFile: vi.fn(),
   savePayment: vi.fn(),
+  submitTravelerReceipt: vi.fn(),
   useAuth: vi.fn(),
   useTrip: vi.fn(),
 }))
@@ -17,6 +18,7 @@ vi.mock('../../trips/hooks/useTrip', () => ({ useTrip: mocks.useTrip }))
 vi.mock('../api/paymentApi', () => ({
   listPayments: mocks.listPayments,
   savePayment: mocks.savePayment,
+  submitTravelerReceipt: mocks.submitTravelerReceipt,
 }))
 vi.mock('../utils/receiptFile', async (importOriginal) => {
   const original = await importOriginal<typeof import('../utils/receiptFile')>()
@@ -67,6 +69,10 @@ describe('TravelerPaymentPage', () => {
       persistedMutation = mutation
       return Promise.resolve(mutation)
     })
+    mocks.submitTravelerReceipt.mockImplementation((current: PaymentRecord, installment: string, receipt: PaymentRecord['receipts'][string]) => {
+      persistedMutation = { ...current, receipts: { ...current.receipts, [installment]: receipt } }
+      return Promise.resolve({ ...current, receipts: { ...current.receipts, [installment]: receipt } })
+    })
   })
 
   afterEach(() => cleanup())
@@ -79,12 +85,26 @@ describe('TravelerPaymentPage', () => {
       target: { files: [file] },
     })
 
-    await waitFor(() => expect(mocks.savePayment).toHaveBeenCalled())
+    await waitFor(() => expect(mocks.submitTravelerReceipt).toHaveBeenCalled())
     expect(persistedMutation?.userCpf).toBe(cpf)
     expect(persistedMutation?.receipts['1']?.filename).toBe('recibo.png')
     expect(persistedMutation?.receipts['1']?.status).toBe('pending')
     expect(
       await screen.findByText('Comprovante enviado e aguardando análise.'),
     ).toBeInTheDocument()
+  })
+
+  it('identifica as parcelas pagas e os comprovantes confirmados', async () => {
+    mocks.listPayments.mockResolvedValue([{
+      ...payment,
+      paidInstallments: 1,
+      receipts: {
+        '1': { data: '', date: '2026-11-18', filename: 'recibo.png', note: '', status: 'approved', type: 'image/png' },
+      },
+    }])
+    render(<TravelerPaymentPage />)
+
+    expect(await screen.findByText('Pagamento registrado')).toBeInTheDocument()
+    expect(screen.getByText('Confirmado pelo administrador')).toBeInTheDocument()
   })
 })

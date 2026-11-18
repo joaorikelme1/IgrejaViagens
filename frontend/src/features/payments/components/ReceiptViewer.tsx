@@ -19,7 +19,7 @@ interface ReceiptViewerProps {
 }
 
 const statusLabels = {
-  approved: 'Aprovado',
+  approved: 'Confirmado pelo administrador',
   pending: 'Pendente',
   rejected: 'Recusado',
 } as const

@@ -313,6 +313,11 @@
   color: #a26900 !important;
 }
 
+.payment-confirmed {
+  color: #116a41 !important;
+  font-weight: 800;
+}
+
 .payment-row-actions,
 .receipt-actions {
   justify-content: flex-start;

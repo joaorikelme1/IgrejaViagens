@@ -38,6 +38,32 @@ async function uploadReceipts(paymentId: string, receipts: Record<string, Paymen
   }
 }
 
+export async function submitTravelerReceipt(
+  payment: PaymentRecord,
+  installment: string,
+  receipt: PaymentReceipt,
+) {
+  if (!receipt.data.startsWith('data:')) {
+    throw new Error('O arquivo do comprovante é inválido.')
+  }
+  const blob = await (await fetch(receipt.data)).blob()
+  if (blob.size > 5_000_000) throw new Error('Comprovante excede 5 MB.')
+  const path = `${payment.id}/${installment}-${crypto.randomUUID()}`
+  unwrap(await supabase.storage.from('payment-receipts').upload(path, blob, {
+    contentType: receipt.type || blob.type,
+  }))
+  unwrap(await supabase.rpc('submit_payment_receipt', {
+    p_file_name: receipt.filename,
+    p_installment: Number(installment),
+    p_mime_type: receipt.type || blob.type || 'application/octet-stream',
+    p_payment_id: payment.id,
+    p_storage_path: path,
+  }))
+  const saved = (await listPayments()).find((item) => item.id === payment.id)
+  if (!saved) throw new Error('Pagamento não encontrado após o envio do comprovante.')
+  return saved
+}
+
 export async function savePayment(mutation: PaymentMutation) {
   const cpf = stripCpf(mutation.userCpf); const travelerId = await profileId(cpf)
   const total = Math.min(24, Math.max(1, Math.trunc(mutation.totalInstallments) || 1))
