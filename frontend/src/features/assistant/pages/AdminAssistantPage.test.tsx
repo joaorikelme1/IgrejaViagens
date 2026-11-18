@@ -14,6 +14,7 @@ const mocks = vi.hoisted(() => ({
   saveTripAllocations: vi.fn(),
   saveTripRoomAssignments: vi.fn(),
   saveTripSeatAssignments: vi.fn(),
+  interpretAssistantCommand: vi.fn(),
   useTrip: vi.fn(),
   useAuth: vi.fn(),
 }))
@@ -28,6 +29,9 @@ vi.mock('../../operations/api/operationsApi', () => ({
   saveTripAllocations: mocks.saveTripAllocations,
   saveTripRoomAssignments: mocks.saveTripRoomAssignments,
   saveTripSeatAssignments: mocks.saveTripSeatAssignments,
+}))
+vi.mock('../api/assistantApi', () => ({
+  interpretAssistantCommand: mocks.interpretAssistantCommand,
 }))
 
 const cpf = '11144477735'
@@ -52,6 +56,11 @@ describe('AdminAssistantPage', () => {
       (_tripId: string, rooms: RoomRecord[], seats: SeatRecord[]) =>
         Promise.resolve({ rooms, seats }),
     )
+    mocks.interpretAssistantCommand.mockImplementation((command: string) => {
+      if (/quanta/i.test(command)) return Promise.resolve({ intent: { kind: 'query_unassigned_seats' } })
+      if (/quartos e assentos/i.test(command)) return Promise.resolve({ intent: { kind: 'distribute_allocations' } })
+      return Promise.resolve({ intent: { kind: 'distribute_seats' } })
+    })
   })
 
   it('responde consultas usando dados reais carregados', async () => {
@@ -59,6 +68,7 @@ describe('AdminAssistantPage', () => {
     const input = await screen.findByLabelText('Solicitação ao assistente')
     await userEvent.type(input, 'Quantas pessoas ainda não possuem ônibus definido?')
     await userEvent.click(screen.getByRole('button', { name: /Enviar comando/ }))
+    expect(mocks.interpretAssistantCommand).toHaveBeenCalledWith('Quantas pessoas ainda não possuem ônibus definido?')
     expect(await screen.findByText('1 pessoa(s) ainda não possuem assento definido.')).toBeInTheDocument()
     expect(screen.getByText('Ana Silva')).toBeInTheDocument()
   })

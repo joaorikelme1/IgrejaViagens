@@ -15,5 +15,9 @@ enable_confirmations = false
 # caminho ao banco sem perfis. Todas as demais chamadas validam o JWT e ADMIN.
 verify_jwt = false
 
+[functions.assistant-chat]
+# A função exige JWT e também verifica se o solicitante é administrador.
+verify_jwt = true
+
 [storage]
 enabled = true

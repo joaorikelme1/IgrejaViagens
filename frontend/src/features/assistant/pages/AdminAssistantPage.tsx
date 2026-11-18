@@ -4,8 +4,8 @@ import { useAuth } from '../../auth/hooks/useAuth'
 import { loadHotelSource, loadTransportSource } from '../../operations/api/operationsApi'
 import { parseHotels } from '../../operations/lib/hotelOperations'
 import { useTrip } from '../../trips/hooks/useTrip'
+import { interpretAssistantCommand } from '../api/assistantApi'
 import { buildAssistantPlan, executeAssistantOperation } from '../lib/assistantPlanner'
-import { parseAssistantCommand } from '../lib/assistantParser'
 import type { AssistantContext, AssistantMessage, AssistantPlan } from '../model/assistantTypes'
 import './adminAssistant.css'
 
@@ -88,22 +88,29 @@ export function AdminAssistantPage() {
     }
   }, [context])
 
-  const submit = (event?: FormEvent) => {
+  const submit = async (event?: FormEvent) => {
     event?.preventDefault()
     const command = input.trim()
     if (!command || !context || processing) return
     setMessages((current) => [...current, message('user', command)])
     setInput('')
     setPending(null)
-    const parsed = parseAssistantCommand(command)
-    if (parsed.clarification) {
-      setMessages((current) => [...current, message('assistant', parsed.clarification, { tone: 'warning' })])
-      return
+    setProcessing(true)
+    try {
+      const parsed = await interpretAssistantCommand(command)
+      if (parsed.clarification) {
+        setMessages((current) => [...current, message('assistant', parsed.clarification, { tone: 'warning' })])
+        return
+      }
+      if (!parsed.intent) return
+      const plan = buildAssistantPlan(parsed.intent, context)
+      setMessages((current) => [...current, message('assistant', plan.summary, { details: plan.details, warnings: plan.warnings, tone: plan.warnings.length ? 'warning' : 'default' })])
+      if (plan.operation) setPending(plan)
+    } catch (error) {
+      setMessages((current) => [...current, message('assistant', error instanceof Error ? error.message : 'Não foi possível consultar a IA.', { tone: 'warning' })])
+    } finally {
+      setProcessing(false)
     }
-    if (!parsed.intent) return
-    const plan = buildAssistantPlan(parsed.intent, context)
-    setMessages((current) => [...current, message('assistant', plan.summary, { details: plan.details, warnings: plan.warnings, tone: plan.warnings.length ? 'warning' : 'default' })])
-    if (plan.operation) setPending(plan)
   }
 
   const confirm = async () => {
@@ -163,8 +170,8 @@ export function AdminAssistantPage() {
 
           {pending ? <aside className="assistant-confirmation"><div><span>Prévia pronta</span><strong>{pending.title}</strong><p>Revise os itens acima. Nenhuma alteração foi realizada ainda.</p></div><div><button disabled={processing} onClick={() => { setPending(null); setMessages((current) => [...current, message('assistant', 'Operação cancelada. Nenhum dado foi alterado.')]) }} type="button">Cancelar</button><button className="is-primary" disabled={processing} onClick={() => void confirm()} type="button">Confirmar e executar</button></div></aside> : null}
 
-          <form className="assistant-composer" onSubmit={submit}>
-            <textarea aria-label="Solicitação ao assistente" disabled={!context || processing} onChange={(event) => setInput(event.currentTarget.value)} onKeyDown={(event) => { if (event.key === 'Enter' && !event.shiftKey) { event.preventDefault(); submit() } }} placeholder="Ex.: Distribua as pessoas pelos ônibus disponíveis" rows={3} value={input} />
+          <form className="assistant-composer" onSubmit={(event) => void submit(event)}>
+            <textarea aria-label="Solicitação ao assistente" disabled={!context || processing} onChange={(event) => setInput(event.currentTarget.value)} onKeyDown={(event) => { if (event.key === 'Enter' && !event.shiftKey) { event.preventDefault(); void submit() } }} placeholder="Ex.: Distribua as pessoas pelos ônibus disponíveis" rows={3} value={input} />
             <div><small>Enter para enviar · Shift+Enter para nova linha</small><button className="is-primary" disabled={!input.trim() || !context || processing} type="submit">Enviar comando <AppIcon name="arrowRight" /></button></div>
           </form>
         </section>
