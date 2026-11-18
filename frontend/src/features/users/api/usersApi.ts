@@ -20,6 +20,21 @@ async function profileRows() {
   return unwrap<ProfileRow[]>(await supabase.from('profiles').select('id, cpf, name, role, birthdate, first_login, married, spouse_name, spouse_id, has_kids, child_names').order('name'))
 }
 
+async function invokeProvisionUser(body: Record<string, unknown>) {
+  const { data, error } = await supabase.functions.invoke('provision-user', { body })
+  if (!error) return data
+
+  let message = error.message
+  const context = (error as { context?: unknown }).context
+  if (context instanceof Response) {
+    const payload = await context.clone().json().catch(() => null)
+    if (payload && typeof payload === 'object' && typeof (payload as { error?: unknown }).error === 'string') {
+      message = (payload as { error: string }).error
+    }
+  }
+  throw new Error(message)
+}
+
 export async function listUsers() {
   const profiles = await profileRows()
   const relationships = unwrap<{ parent_id: string; child_id: string }[]>(await supabase.from('family_relationships').select('parent_id, child_id'))
@@ -46,7 +61,7 @@ async function syncRelations(profile: ProfileRow, mutation: UserMutation) {
 export async function createUser(cpfValue: string, mutation: UserMutation) {
   const cpf = stripCpf(cpfValue)
   if (!mutation.initialPassword || mutation.initialPassword.length < 8) throw new Error('A senha inicial deve ter ao menos 8 caracteres.')
-  unwrap(await supabase.functions.invoke('provision-user', { body: { cpf, password: mutation.initialPassword, name: mutation.name, role: mutation.role, birthdate: mutation.birthdate || null, firstLogin: mutation.firstLogin, married: mutation.married, spouseName: mutation.spouseName, hasKids: mutation.hasKids } }))
+  await invokeProvisionUser({ cpf, password: mutation.initialPassword, name: mutation.name, role: mutation.role, birthdate: mutation.birthdate || null, firstLogin: mutation.firstLogin, married: mutation.married, spouseName: mutation.spouseName, hasKids: mutation.hasKids })
   const row = unwrap<ProfileRow>(await supabase.from('profiles').select('id, cpf, name, role, birthdate, first_login, married, spouse_name, spouse_id, has_kids, child_names').eq('cpf', cpf).single())
   await syncRelations(row, mutation)
   const created = (await listUsers()).find((user) => user.cpf === cpf)
@@ -67,5 +82,5 @@ export async function deleteUser(cpfValue: string) {
   const cpf = stripCpf(cpfValue)
   const row = unwrap<{ id: string }>(await supabase.from('profiles').select('id').eq('cpf', cpf).single())
   // Deletar a identidade do Auth requer a Edge Function; esta rota não expõe service_role ao navegador.
-  unwrap(await supabase.functions.invoke('provision-user', { body: { action: 'delete', userId: row.id } }))
+  await invokeProvisionUser({ action: 'delete', userId: row.id })
 }

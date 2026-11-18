@@ -27,7 +27,18 @@ Deno.serve(async (request) => {
     }
     if (body.action === 'delete') {
       if (bootstrapAllowed || !body.userId) return new Response(JSON.stringify({ error: 'Operação inválida.' }), { status: 400, headers })
-      const { error } = await admin.auth.admin.deleteUser(String(body.userId))
+      const userId = String(body.userId ?? '')
+      const { data: target, error: targetError } = await admin.from('profiles').select('role').eq('id', userId).maybeSingle()
+      if (targetError) throw targetError
+      if (!target) return new Response(JSON.stringify({ error: 'Usuário não encontrado.' }), { status: 404, headers })
+      if (target.role === 'admin') {
+        const { count, error: countError } = await admin.from('profiles').select('id', { count: 'exact', head: true }).eq('role', 'admin')
+        if (countError) throw countError
+        if ((count ?? 0) <= 1) return new Response(JSON.stringify({ error: 'Não é possível excluir o último administrador do sistema.' }), { status: 409, headers })
+      }
+      const { error: membershipsError } = await admin.from('trip_travelers').delete().eq('traveler_id', userId)
+      if (membershipsError) throw membershipsError
+      const { error } = await admin.auth.admin.deleteUser(userId)
       if (error) throw error
       return new Response(null, { status: 204, headers })
     }
