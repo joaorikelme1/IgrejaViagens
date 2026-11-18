@@ -57,6 +57,7 @@ describe('AdminAssistantPage', () => {
         Promise.resolve({ rooms, seats }),
     )
     mocks.interpretAssistantCommand.mockImplementation((command: string) => {
+      if (/liste/i.test(command)) return Promise.resolve({ answer: 'Lista de viajantes: Ana Silva.' })
       if (/quanta/i.test(command)) return Promise.resolve({ intent: { kind: 'query_unassigned_seats' } })
       if (/quartos e assentos/i.test(command)) return Promise.resolve({ intent: { kind: 'distribute_allocations' } })
       return Promise.resolve({ intent: { kind: 'distribute_seats' } })
@@ -68,7 +69,7 @@ describe('AdminAssistantPage', () => {
     const input = await screen.findByLabelText('Solicitação ao assistente')
     await userEvent.type(input, 'Quantas pessoas ainda não possuem ônibus definido?')
     await userEvent.click(screen.getByRole('button', { name: /Enviar comando/ }))
-    expect(mocks.interpretAssistantCommand).toHaveBeenCalledWith('Quantas pessoas ainda não possuem ônibus definido?')
+    expect(mocks.interpretAssistantCommand).toHaveBeenCalledWith('Quantas pessoas ainda não possuem ônibus definido?', trip.id)
     expect(await screen.findByText('1 pessoa(s) ainda não possuem assento definido.')).toBeInTheDocument()
     expect(screen.getByText('Ana Silva')).toBeInTheDocument()
   })
@@ -101,5 +102,15 @@ describe('AdminAssistantPage', () => {
         expect.arrayContaining([expect.objectContaining({ userCpf: cpf })]),
       )
     })
+  })
+
+  it('mostra respostas conversacionais da IA sem pedir uma operação', async () => {
+    render(<AdminAssistantPage />)
+    const input = await screen.findByLabelText('Solicitação ao assistente')
+    await userEvent.type(input, 'Liste os viajantes da viagem')
+    await userEvent.click(screen.getByRole('button', { name: /Enviar comando/ }))
+
+    expect(await screen.findByText('Lista de viajantes: Ana Silva.')).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Confirmar e executar' })).not.toBeInTheDocument()
   })
 })

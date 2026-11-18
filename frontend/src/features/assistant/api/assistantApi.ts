@@ -3,14 +3,19 @@ import type { ParsedAssistantCommand } from '../model/assistantTypes'
 
 export async function interpretAssistantCommand(
   command: string,
+  tripId: string,
 ): Promise<ParsedAssistantCommand> {
   const result = unwrap<ParsedAssistantCommand>(
     await supabase.functions.invoke('assistant-chat', {
-      body: { command },
+      body: { command, tripId },
     }),
   )
 
-  if (!result?.intent && !result?.clarification) {
+  if (
+    !result?.intent &&
+    !result?.clarification &&
+    !('answer' in result && result.answer)
+  ) {
     throw new Error('A IA retornou uma resposta inválida. Tente novamente.')
   }
   return result

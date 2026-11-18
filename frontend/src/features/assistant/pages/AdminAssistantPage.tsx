@@ -97,7 +97,11 @@ export function AdminAssistantPage() {
     setPending(null)
     setProcessing(true)
     try {
-      const parsed = await interpretAssistantCommand(command)
+      const parsed = await interpretAssistantCommand(command, context.trip.id)
+      if ('answer' in parsed && parsed.answer) {
+        setMessages((current) => [...current, message('assistant', parsed.answer)])
+        return
+      }
       if (parsed.clarification) {
         setMessages((current) => [...current, message('assistant', parsed.clarification, { tone: 'warning' })])
         return

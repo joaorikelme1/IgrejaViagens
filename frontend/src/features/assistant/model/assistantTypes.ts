@@ -35,6 +35,7 @@ export type AssistantIntent =
 export type ParsedAssistantCommand =
   | { intent: AssistantIntent; clarification?: never }
   | { clarification: string; intent?: never }
+  | { answer: string; clarification?: never; intent?: never }
 
 export type AssistantOperation =
   | { kind: 'save_hotels'; hotels: HotelConfig[] }
