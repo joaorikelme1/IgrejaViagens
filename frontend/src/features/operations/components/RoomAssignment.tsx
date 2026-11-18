@@ -56,7 +56,25 @@ export function RoomAssignment({
           {error ? <p className="form-message is-error" role="alert">{error}</p> : null}
           {availableUsers.length ? availableUsers.map((user) => {
             const checked = selected.has(user.cpf)
-            return <label key={user.cpf}><input checked={checked} disabled={saving} onChange={(event) => setSelected((value) => { const next = new Set(value); if (event.currentTarget.checked) next.add(user.cpf); else next.delete(user.cpf); return next })} type="checkbox" /><span><strong>{user.name}</strong><small>{maskCpf(user.cpf)}</small></span></label>
+            return (
+              <label key={user.cpf}>
+                <input
+                  checked={checked}
+                  disabled={saving}
+                  onChange={(event) => {
+                    const isChecked = event.currentTarget.checked
+                    setSelected((value) => {
+                      const next = new Set(value)
+                      if (isChecked) next.add(user.cpf)
+                      else next.delete(user.cpf)
+                      return next
+                    })
+                  }}
+                  type="checkbox"
+                />
+                <span><strong>{user.name}</strong><small>{maskCpf(user.cpf)}</small></span>
+              </label>
+            )
           }) : <p className="operation-empty">Todos os viajantes já possuem quarto.</p>}
         </div>
         <footer className="operation-modal__footer"><button disabled={saving} onClick={onClose} type="button">Cancelar</button><button className="is-primary" disabled={saving} onClick={() => void submit()} type="button">{saving ? 'Persistindo...' : 'Salvar ocupantes'}</button></footer>
