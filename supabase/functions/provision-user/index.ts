@@ -4,6 +4,7 @@ const headers = {
   'content-type': 'application/json',
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
 }
 const cpf = (value: unknown) => String(value ?? '').replace(/\D/g, '')
 const internalEmail = (value: string) => `${value}@auth.igreja-viagens.invalid`
@@ -28,7 +29,7 @@ Deno.serve(async (request) => {
       if (bootstrapAllowed || !body.userId) return new Response(JSON.stringify({ error: 'Operação inválida.' }), { status: 400, headers })
       const { error } = await admin.auth.admin.deleteUser(String(body.userId))
       if (error) throw error
-      return new Response(null, { status: 204 })
+      return new Response(null, { status: 204, headers })
     }
     const value = cpf(body.cpf)
     if (!/^\d{11}$/.test(value) || typeof body.password !== 'string' || body.password.length < 8) {
