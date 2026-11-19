@@ -287,18 +287,12 @@ describe('AdminPaymentsPage', () => {
     )
     await userEvent.click(screen.getByRole('button', { name: 'Aprovar' }))
 
-    await waitFor(() => expect(mocks.savePayment).toHaveBeenCalledWith(
-      expect.objectContaining({
-        id: receiptPayment.id,
-        paidInstallments: 1,
-        receipts: {
-          1: expect.objectContaining({
-            data: expect.stringContaining('/storage/v1/object/sign/'),
-            status: 'approved',
-          }),
-        },
-      }),
-    ))
+    await waitFor(() => expect(mocks.savePayment).toHaveBeenCalled())
+    const saved = mocks.savePayment.mock.calls.at(-1)?.[0] as PaymentRecord
+    expect(saved.id).toBe(receiptPayment.id)
+    expect(saved.paidInstallments).toBe(1)
+    expect(saved.receipts[1]).toMatchObject({ status: 'approved' })
+    expect(saved.receipts[1].data).toContain('/storage/v1/object/sign/')
   })
 
   it('exibe erro de carregamento da API', async () => {

@@ -21,13 +21,19 @@ async function profileRows() {
 }
 
 async function invokeProvisionUser(body: Record<string, unknown>) {
-  const { data, error } = await supabase.functions.invoke('provision-user', { body })
-  if (!error) return data
+  const response = await supabase.functions.invoke<unknown>('provision-user', { body })
+  if (!response.error) return response.data
 
-  let message = error.message
-  const context = (error as { context?: unknown }).context
+  const error: unknown = response.error
+  const errorRecord = error && typeof error === 'object'
+    ? error as Record<string, unknown>
+    : null
+  let message = typeof errorRecord?.message === 'string'
+    ? errorRecord.message
+    : 'Não foi possível provisionar o usuário.'
+  const context = errorRecord?.context
   if (context instanceof Response) {
-    const payload = await context.clone().json().catch(() => null)
+    const payload: unknown = await context.clone().json().catch(() => null)
     if (payload && typeof payload === 'object' && typeof (payload as { error?: unknown }).error === 'string') {
       message = (payload as { error: string }).error
     }
