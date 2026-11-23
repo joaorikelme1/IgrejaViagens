@@ -35,7 +35,13 @@ export type AssistantIntent =
 export type ParsedAssistantCommand =
   | { intent: AssistantIntent; clarification?: never }
   | { clarification: string; intent?: never }
-  | { answer: string; clarification?: never; intent?: never }
+  | { answer: string; context?: AssistantQueryContext; clarification?: never; intent?: never }
+
+export interface AssistantQueryContext {
+  queryKind: 'allocation_breakdown' | 'financial_summary' | 'seat_duplicates' | 'structure_list' | 'traveler_filter'
+  travelerIds: string[]
+  tripId: string
+}
 
 export type AssistantOperation =
   | { kind: 'save_hotels'; hotels: HotelConfig[] }
@@ -66,6 +72,7 @@ export interface AssistantMessage {
   details?: string[]
   id: string
   role: 'assistant' | 'user'
+  queryContext?: AssistantQueryContext
   text: string
   tone?: 'default' | 'success' | 'warning'
   warnings?: string[]

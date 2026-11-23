@@ -16,6 +16,8 @@ const suggestions = [
   'Distribua as pessoas pelos ônibus disponíveis',
   'Organize as pessoas nos quartos dos hotéis',
   'Atribua quartos e assentos a quem ainda não possui',
+  'Quem quitou a viagem mas ainda não escolheu assento?',
+  'Some o que já foi recebido e quanto ainda falta receber',
 ]
 
 function message(role: AssistantMessage['role'], text: string, extra: Partial<AssistantMessage> = {}): AssistantMessage {
@@ -97,9 +99,10 @@ export function AdminAssistantPage() {
     setPending(null)
     setProcessing(true)
     try {
-      const parsed = await interpretAssistantCommand(command, context.trip.id)
+      const previousContext = [...messages].reverse().find((item) => item.queryContext)?.queryContext
+      const parsed = await interpretAssistantCommand(command, context.trip.id, previousContext)
       if ('answer' in parsed && parsed.answer) {
-        setMessages((current) => [...current, message('assistant', parsed.answer)])
+        setMessages((current) => [...current, message('assistant', parsed.answer, { queryContext: parsed.context })])
         return
       }
       if (parsed.clarification) {
@@ -185,7 +188,7 @@ export function AdminAssistantPage() {
           <div className="assistant-suggestions">{suggestions.map((suggestion) => <button key={suggestion} onClick={() => setInput(suggestion)} type="button">{suggestion}</button>)}</div>
           <details><summary>Cadastro em lote</summary><p>Use uma linha por item:</p><code>Cadastre estes hotéis:{'\n'}Hotel Central | endereço=Rua A | quartos=101:2, 102:3</code><code>Cadastre estes ônibus:{'\n'}Executivo 1 | empresa=Viação Azul | motorista=João | placa=ABC1D23 | assentos=44</code></details>
           <details><summary>Movimentações</summary><code>Mude a família Silva para o ônibus 3</code><code>Transfira Ana Silva e João Silva para o hotel Central</code></details>
-          <div className="assistant-local-note"><AppIcon name="lock" /><p><strong>IA com execução protegida</strong><span>A Groq interpreta o pedido, mas nenhuma alteração é feita sem sua confirmação e as permissões do Supabase.</span></p></div>
+          <div className="assistant-local-note"><AppIcon name="lock" /><p><strong>IA com execução protegida</strong><span>A Groq ajuda a estruturar pedidos complexos; filtros, cálculos e respostas são validados no Supabase e alterações exigem confirmação.</span></p></div>
         </aside>
       </div>
     </div>

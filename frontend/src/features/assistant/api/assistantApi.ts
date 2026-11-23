@@ -1,21 +1,30 @@
 import { supabase } from '../../../infrastructure/supabase/client'
-import type { ParsedAssistantCommand } from '../model/assistantTypes'
+import type { AssistantQueryContext, ParsedAssistantCommand } from '../model/assistantTypes'
 
 export async function interpretAssistantCommand(
   command: string,
   tripId: string,
+  previousContext?: AssistantQueryContext,
 ): Promise<ParsedAssistantCommand> {
   const response = await supabase.functions.invoke<ParsedAssistantCommand>(
     'assistant-chat',
-    { body: { command, tripId } },
+    { body: { command, previousContext, tripId } },
   )
   if (response.error) {
-    const context = 'context' in response.error ? response.error.context : null
+    const error: unknown = response.error
+    const errorRecord = error && typeof error === 'object'
+      ? error as Record<string, unknown>
+      : null
+    const context = errorRecord?.context
     if (context instanceof Response) {
       const payload = await context.json().catch(() => null) as { error?: unknown } | null
       if (typeof payload?.error === 'string') throw new Error(payload.error)
     }
-    throw new Error(response.error.message)
+    throw new Error(
+      typeof errorRecord?.message === 'string'
+        ? errorRecord.message
+        : 'Não foi possível consultar o assistente.',
+    )
   }
   const result = response.data
   if (!result) {

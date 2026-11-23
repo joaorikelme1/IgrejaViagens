@@ -69,7 +69,7 @@ describe('AdminAssistantPage', () => {
     const input = await screen.findByLabelText('Solicitação ao assistente')
     await userEvent.type(input, 'Quantas pessoas ainda não possuem ônibus definido?')
     await userEvent.click(screen.getByRole('button', { name: /Enviar comando/ }))
-    expect(mocks.interpretAssistantCommand).toHaveBeenCalledWith('Quantas pessoas ainda não possuem ônibus definido?', trip.id)
+    expect(mocks.interpretAssistantCommand).toHaveBeenCalledWith('Quantas pessoas ainda não possuem ônibus definido?', trip.id, undefined)
     expect(await screen.findByText('1 pessoa(s) ainda não possuem assento definido.')).toBeInTheDocument()
     expect(screen.getByText('Ana Silva')).toBeInTheDocument()
   })
@@ -116,5 +116,25 @@ describe('AdminAssistantPage', () => {
       ),
     ).toBeDefined())
     expect(screen.queryByRole('button', { name: 'Confirmar e executar' })).not.toBeInTheDocument()
+  })
+
+  it('envia o grupo anterior em perguntas complementares', async () => {
+    const queryContext = { queryKind: 'traveler_filter', travelerIds: ['traveler-1'], tripId: trip.id }
+    mocks.interpretAssistantCommand
+      .mockResolvedValueOnce({ answer: 'Cinco maiores devedores', context: queryContext })
+      .mockResolvedValueOnce({ answer: 'Com hotel: Ana Silva', context: queryContext })
+    render(<AdminAssistantPage />)
+    const input = await screen.findByLabelText('Solicitação ao assistente')
+    await userEvent.type(input, 'Quais são os cinco viajantes que mais estão devendo?')
+    await userEvent.click(screen.getByRole('button', { name: /Enviar comando/ }))
+    expect(await screen.findByText('Cinco maiores devedores')).toBeInTheDocument()
+
+    await userEvent.type(input, 'Desses cinco, quais já escolheram hotel?')
+    await userEvent.click(screen.getByRole('button', { name: /Enviar comando/ }))
+    await waitFor(() => expect(mocks.interpretAssistantCommand).toHaveBeenLastCalledWith(
+      'Desses cinco, quais já escolheram hotel?',
+      trip.id,
+      queryContext,
+    ))
   })
 })
