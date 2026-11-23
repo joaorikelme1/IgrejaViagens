@@ -1,0 +1,116 @@
+.placeholder-page {
+  display: grid;
+  min-height: calc(100vh - 136px);
+  align-content: center;
+  justify-items: center;
+  padding: clamp(2rem, 6vw, 4rem);
+  border: 1px dashed var(--color-border);
+  border-radius: var(--radius-lg);
+  background: rgb(255 255 255 / 72%);
+  text-align: center;
+}
+
+.placeholder-page__icon {
+  display: grid;
+  width: 64px;
+  height: 64px;
+  margin-bottom: 1.1rem;
+  border-radius: 18px;
+  background: linear-gradient(135deg, #131b80, #4d53a0);
+  box-shadow: 0 12px 30px rgb(19 27 128 / 20%);
+  color: #fff;
+  place-items: center;
+}
+
+.placeholder-page__icon .app-icon {
+  width: 1.8rem;
+  height: 1.8rem;
+}
+
+.placeholder-page__eyebrow {
+  margin: 0 0 0.35rem;
+  color: var(--color-brand);
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.placeholder-page h2 {
+  margin: 0;
+  color: var(--color-text);
+  font-size: clamp(1.45rem, 3vw, 2rem);
+}
+
+.placeholder-page > p:not(.placeholder-page__eyebrow) {
+  max-width: 480px;
+  margin: 0.7rem 0 0;
+  color: var(--color-text-muted);
+  line-height: 1.65;
+}
+
+.placeholder-page__trip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-top: 1.5rem;
+  padding: 0.65rem 0.85rem;
+  border-radius: 999px;
+  background: rgb(19 27 128 / 8%);
+  color: var(--color-text-muted);
+  font-size: 0.75rem;
+}
+
+.placeholder-page__trip .app-icon {
+  width: 0.95rem;
+  height: 0.95rem;
+  color: var(--color-brand);
+}
+
+.placeholder-page__trip strong {
+  color: var(--color-text);
+}
+
+.not-found-page {
+  display: grid;
+  min-height: 100vh;
+  padding: 2rem;
+  background:
+    radial-gradient(circle at 20% 10%, rgb(19 27 128 / 12%), transparent 30rem),
+    var(--color-background);
+  place-items: center;
+}
+
+.not-found-page section {
+  max-width: 480px;
+  text-align: center;
+}
+
+.not-found-page section > span {
+  display: block;
+  color: rgb(19 27 128 / 14%);
+  font-size: clamp(6rem, 20vw, 11rem);
+  font-weight: 900;
+  letter-spacing: -0.08em;
+  line-height: 0.85;
+}
+
+.not-found-page h1 {
+  margin: 1.5rem 0 0;
+  color: var(--color-text);
+}
+
+.not-found-page p {
+  margin: 0.7rem 0 1.5rem;
+  color: var(--color-text-muted);
+}
+
+.not-found-page a {
+  display: inline-flex;
+  padding: 0.7rem 1rem;
+  border-radius: 8px;
+  background: var(--color-brand);
+  color: #fff;
+  font-weight: 700;
+  text-decoration: none;
+}

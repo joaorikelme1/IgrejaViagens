@@ -1,0 +1,262 @@
+.trip-management-overlay {
+  position: fixed;
+  z-index: 1100;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  background: rgb(11 31 58 / 60%);
+  backdrop-filter: blur(6px);
+}
+
+.trip-management-modal {
+  width: min(100%, 840px);
+  max-height: 94vh;
+  overflow: auto;
+  border-radius: 18px;
+  background: #fff;
+  box-shadow: 0 24px 80px rgb(27 31 85 / 24%);
+}
+
+.trip-management-modal__header,
+.trip-management-modal__footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1rem 1.25rem;
+}
+
+.trip-management-modal__header {
+  border-bottom: 1px solid var(--color-border);
+}
+
+.trip-management-modal__header h2,
+.confirm-modal h2 {
+  margin: 0;
+  color: var(--color-text);
+  font-size: 1.05rem;
+}
+
+.trip-management-modal__header p,
+.confirm-modal p {
+  margin: 0.25rem 0 0;
+  color: var(--color-text-muted);
+  font-size: 0.76rem;
+  line-height: 1.6;
+}
+
+.trip-management-modal__header > button {
+  display: grid;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  border: 0;
+  border-radius: 8px;
+  background: var(--color-background);
+  color: var(--color-text-muted);
+  cursor: pointer;
+  place-items: center;
+}
+
+.trip-management-modal__body {
+  display: grid;
+  gap: 1.25rem;
+  padding: 1.25rem;
+}
+
+.trip-management-modal__footer {
+  justify-content: flex-end;
+  border-top: 1px solid var(--color-border);
+}
+
+.trip-management-modal__footer button,
+.bus-editor button,
+.trip-field small button {
+  padding: 0.58rem 0.85rem;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  background: #fff;
+  color: var(--color-text);
+  cursor: pointer;
+  font-size: 0.74rem;
+  font-weight: 700;
+}
+
+.trip-management-modal__footer .is-primary {
+  border-color: var(--color-brand);
+  background: var(--color-brand);
+  color: #fff;
+}
+
+.trip-management-modal__footer .is-danger {
+  border-color: #bc2e3e;
+  background: #bc2e3e;
+  color: #fff;
+}
+
+.trip-management-modal button:disabled,
+.trip-settings button:disabled {
+  cursor: wait;
+  opacity: 0.6;
+}
+
+.trip-fields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.9rem;
+}
+
+.trip-field,
+.bus-card label {
+  display: grid;
+  gap: 0.35rem;
+  color: var(--color-text);
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.trip-field--wide,
+.trip-field--goal {
+  grid-column: 1 / -1;
+}
+
+.trip-field input,
+.trip-field textarea,
+.bus-card input,
+.bus-card select {
+  width: 100%;
+  padding: 0.7rem 0.75rem;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  background: #fff;
+  color: var(--color-text);
+  font: inherit;
+  font-weight: 500;
+}
+
+.trip-field input:focus,
+.trip-field textarea:focus,
+.bus-card input:focus,
+.bus-card select:focus {
+  border-color: var(--color-brand);
+  outline: 2px solid rgb(19 27 128 / 10%);
+}
+
+.trip-field small {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  color: var(--color-text-muted);
+  font-weight: 500;
+}
+
+.trip-field small button {
+  padding: 0.35rem 0.55rem;
+  color: var(--color-brand);
+}
+
+.bus-editor {
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.bus-editor__heading,
+.bus-card header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.bus-editor legend {
+  padding: 0;
+  color: var(--color-text);
+  font-size: 0.86rem;
+  font-weight: 800;
+}
+
+.bus-editor__heading p {
+  margin: 0.2rem 0 0;
+  color: var(--color-text-muted);
+  font-size: 0.68rem;
+}
+
+.bus-editor__list {
+  display: grid;
+  gap: 0.65rem;
+  margin-top: 0.75rem;
+}
+
+.bus-card {
+  padding: 0.85rem;
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  background: var(--color-background);
+}
+
+.bus-card header strong {
+  font-size: 0.78rem;
+}
+
+.bus-card header small {
+  flex: 1;
+  color: var(--color-text-muted);
+}
+
+.bus-card header button {
+  padding: 0.32rem 0.5rem;
+  color: #a22b3a;
+}
+
+.bus-card__fields {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.75rem;
+  margin-top: 0.75rem;
+}
+
+.form-message {
+  margin: 0;
+  padding: 0.7rem 0.8rem;
+  border-radius: 8px;
+  font-size: 0.75rem;
+}
+
+.form-message.is-error {
+  border: 1px solid #efbdc3;
+  background: #fff2f3;
+  color: #9e2433;
+}
+
+.form-message.is-success {
+  border: 1px solid #a9dec3;
+  background: #effaf4;
+  color: #12693d;
+}
+
+.confirm-modal {
+  width: min(100%, 470px);
+}
+
+@media (max-width: 620px) {
+  .trip-fields,
+  .bus-card__fields {
+    grid-template-columns: 1fr;
+  }
+
+  .trip-field--wide,
+  .trip-field--goal {
+    grid-column: auto;
+  }
+
+  .trip-field small,
+  .bus-editor__heading {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}

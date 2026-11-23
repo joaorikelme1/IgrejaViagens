@@ -1,0 +1,213 @@
+.profile-avatar {
+  position: relative;
+  overflow: hidden;
+  padding: 0;
+  border: 2px solid rgb(255 255 255 / 24%);
+  border-radius: 50%;
+  background: linear-gradient(135deg, #4d53a0, #7f84ce);
+  color: #fff;
+  cursor: pointer;
+  font-weight: 800;
+}
+
+.profile-avatar:hover,
+.profile-avatar:focus-visible {
+  border-color: #fff;
+  outline: none;
+  box-shadow: 0 0 0 3px rgb(77 83 160 / 22%);
+}
+
+.profile-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.profile-avatar > span {
+  display: grid;
+  width: 100%;
+  height: 100%;
+  color: inherit;
+  place-items: center;
+}
+
+.profile-photo-overlay {
+  position: fixed;
+  z-index: 1400;
+  inset: 0;
+  display: grid;
+  padding: 1rem;
+  background: rgb(11 31 58 / 64%);
+  backdrop-filter: blur(6px);
+  place-items: center;
+}
+
+.profile-photo-modal {
+  width: min(100%, 580px);
+  overflow: hidden;
+  border-radius: 18px;
+  background: #fff;
+  box-shadow: 0 24px 80px rgb(27 31 85 / 28%);
+}
+
+.profile-photo-modal > header,
+.profile-photo-modal > footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1.1rem 1.25rem;
+}
+
+.profile-photo-modal > header {
+  border-bottom: 1px solid var(--color-border);
+}
+
+.profile-photo-modal > header span {
+  color: var(--color-text-muted);
+  font-size: 0.75rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.profile-photo-modal h2,
+.profile-photo-modal p {
+  margin: 0;
+}
+
+.profile-photo-modal h2 {
+  margin-top: 0.2rem;
+}
+
+.profile-photo-modal > header p,
+.profile-photo-options p {
+  margin-top: 0.35rem;
+  color: var(--color-text-muted);
+  font-size: 0.875rem;
+}
+
+.profile-photo-modal > header > button {
+  display: grid;
+  width: 36px;
+  height: 36px;
+  flex: 0 0 auto;
+  padding: 0;
+  border: 0;
+  border-radius: 8px;
+  background: var(--color-background);
+  color: var(--color-text-muted);
+  cursor: pointer;
+  place-items: center;
+}
+
+.profile-photo-body {
+  display: grid;
+  grid-template-columns: 170px 1fr;
+  align-items: center;
+  gap: 1.5rem;
+  padding: 1.5rem 1.25rem;
+}
+
+.profile-photo-preview {
+  display: grid;
+  width: 170px;
+  aspect-ratio: 1;
+  overflow: hidden;
+  border: 4px solid #fff;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #303b9c, #7f84ce);
+  box-shadow: 0 0 0 1px var(--color-border), 0 12px 35px rgb(27 31 85 / 18%);
+  color: #fff;
+  font-size: 3rem;
+  font-weight: 800;
+  place-items: center;
+}
+
+.profile-photo-preview img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.profile-photo-options {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.profile-photo-options > strong {
+  overflow: hidden;
+  max-width: 100%;
+  color: var(--color-text);
+  font-size: 1rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.profile-photo-upload,
+.profile-photo-remove,
+.profile-photo-modal > footer button {
+  padding: 0.62rem 0.8rem;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  background: #fff;
+  color: var(--color-text);
+  cursor: pointer;
+  font-weight: 750;
+}
+
+.profile-photo-upload {
+  margin-top: 1rem;
+  border-color: var(--color-brand);
+  background: var(--color-brand);
+  color: #fff;
+}
+
+.profile-photo-upload input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+}
+
+.profile-photo-remove {
+  margin-top: 0.5rem;
+  border: 0;
+  color: #a22736;
+}
+
+.profile-photo-error {
+  margin: 0 1.25rem 1rem !important;
+}
+
+.profile-photo-modal > footer {
+  justify-content: flex-end;
+  border-top: 1px solid var(--color-border);
+}
+
+.profile-photo-modal > footer button.is-primary {
+  border-color: var(--color-brand);
+  background: var(--color-brand);
+  color: #fff;
+}
+
+.profile-photo-modal button:disabled,
+.profile-photo-upload:has(input:disabled) {
+  cursor: wait;
+  opacity: 0.6;
+}
+
+@media (max-width: 520px) {
+  .profile-photo-body {
+    grid-template-columns: 1fr;
+    justify-items: center;
+    text-align: center;
+  }
+
+  .profile-photo-options {
+    align-items: center;
+  }
+}
