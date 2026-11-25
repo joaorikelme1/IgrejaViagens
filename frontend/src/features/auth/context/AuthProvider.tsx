@@ -33,7 +33,12 @@ export function AuthProvider({ children }: PropsWithChildren) {
     let isCurrent = true
 
     void getCurrentUser()
-      .then((authenticatedUser) => {
+      .then(async (authenticatedUser) => {
+        if (authenticatedUser.firstLogin) {
+          await logout()
+          if (isCurrent) clearAuthenticatedState()
+          return
+        }
         if (isCurrent) setUser(authenticatedUser)
       })
       .catch(() => {

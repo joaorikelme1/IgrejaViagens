@@ -1,5 +1,11 @@
 # Igreja Viagens
 
+> **Legado não integrado.** A aplicação ativa usa React + Supabase. Nenhum frontend
+> atual chama esta API Spring Boot. Mantenha este diretório apenas para referência
+> e testes de migração; não o publique como parte do ambiente atual. O encoder
+> ainda aceita senhas legadas em texto puro e exige saneamento antes de qualquer
+> reativação.
+
 Aplicacao Spring Boot com PostgreSQL.
 
 ## Executar com Docker

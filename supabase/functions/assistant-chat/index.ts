@@ -283,6 +283,15 @@ Deno.serve(async (request) => {
     if (profileError) throw profileError
     if (profile?.role !== 'admin') return json({ error: 'Sem permissão.' }, 403)
 
+    const { data: quotaAllowed, error: quotaError } = await admin.rpc('consume_assistant_quota', { p_user_id: user.user.id })
+    if (quotaError) throw quotaError
+    if (!quotaAllowed) {
+      return new Response(JSON.stringify({ error: 'Limite de uso do assistente atingido. Aguarde e tente novamente.' }), {
+        status: 429,
+        headers: { ...headers, 'Retry-After': '60' },
+      })
+    }
+
     const body = await request.json()
     const command = text(body?.command, 4000)
     const tripId = text(body?.tripId, 36)

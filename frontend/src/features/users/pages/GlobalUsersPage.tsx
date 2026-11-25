@@ -4,9 +4,10 @@ import { listTrips } from '../../trips/api/tripApi'
 import { useTrip } from '../../trips/hooks/useTrip'
 import type { Trip } from '../../trips/model/tripTypes'
 import { deleteUserGlobally } from '../api/travelerCompatibilityApi'
-import { createUser, listUsers, updateUser } from '../api/usersApi'
+import { createUser, listUsers, resetUserPassword, updateUser } from '../api/usersApi'
 import { ConfirmUserActionModal } from '../components/ConfirmUserActionModal'
 import { UserForm } from '../components/UserForm'
+import { ResetPasswordModal } from '../components/ResetPasswordModal'
 import { filterUsers } from '../lib/userSearch'
 import type { SystemUser, UserMutation } from '../model/userTypes'
 import './userManagement.css'
@@ -26,6 +27,7 @@ function GlobalUsersContent() {
   const [editingUser, setEditingUser] = useState<SystemUser | null | undefined>()
   const [deletingUser, setDeletingUser] = useState<SystemUser | null>(null)
   const [feedback, setFeedback] = useState<string | null>(null)
+  const [resettingUser, setResettingUser] = useState<SystemUser | null>(null)
 
   useEffect(() => {
     let current = true
@@ -144,7 +146,7 @@ function GlobalUsersContent() {
                       {user.hasKids && user.kids.length ? ` · ${user.kids.length} filho(s)` : ''}
                     </td>
                     <td>{associatedTrips.join(', ') || '—'}</td>
-                    <td><div className="user-row-actions"><button onClick={() => setEditingUser(user)} type="button">Editar</button><button className="is-danger" onClick={() => setDeletingUser(user)} type="button">Excluir globalmente</button></div></td>
+                    <td><div className="user-row-actions"><button onClick={() => setEditingUser(user)} type="button">Editar</button><button onClick={() => setResettingUser(user)} type="button">Redefinir acesso</button><button className="is-danger" onClick={() => setDeletingUser(user)} type="button">Excluir globalmente</button></div></td>
                   </tr>
                 )
               }) : <tr><td className="user-empty" colSpan={7}>Nenhum usuário encontrado.</td></tr>}
@@ -170,6 +172,17 @@ function GlobalUsersContent() {
           onCancel={() => setDeletingUser(null)}
           onConfirm={removeGlobally}
           title="Confirmar exclusão global"
+        />
+      ) : null}
+      {resettingUser ? (
+        <ResetPasswordModal
+          onCancel={() => setResettingUser(null)}
+          onConfirm={async (password) => {
+            await resetUserPassword(resettingUser.cpf, password)
+            setUsers(await listUsers())
+            setFeedback('Acesso redefinido. A troca da senha será obrigatória no próximo login.')
+          }}
+          user={resettingUser}
         />
       ) : null}
     </div>

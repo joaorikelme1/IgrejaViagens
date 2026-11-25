@@ -45,8 +45,8 @@ export function userToForm(user: SystemUser): UserFormValues {
 export function validateUserForm(values: UserFormValues, isEditing: boolean) {
   if (!values.name.trim()) throw new Error('Informe o nome completo.')
   if (!isEditing && !isValidCpf(values.cpf)) throw new Error('CPF inválido.')
-  if (!isEditing && values.initialPassword.length < 8) {
-    throw new Error('A senha inicial deve ter ao menos 8 caracteres.')
+  if (!isEditing && (values.initialPassword.length < 10 || !/[a-zA-Z]/.test(values.initialPassword) || !/\d/.test(values.initialPassword))) {
+    throw new Error('A senha inicial deve ter ao menos 10 caracteres, com letras e números.')
   }
   if (values.married && !values.spouseName.trim()) {
     throw new Error('Informe o nome do cônjuge.')

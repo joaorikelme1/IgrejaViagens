@@ -62,6 +62,7 @@ export function PaymentForm({
         totalInstallments,
         tripId,
         userCpf,
+        version: selectedExistingPayment?.version,
       })
       onClose()
     } catch (submitError) {

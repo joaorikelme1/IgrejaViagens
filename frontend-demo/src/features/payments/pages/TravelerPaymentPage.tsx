@@ -151,7 +151,7 @@ function TravelerPaymentContent({
                     <label className="receipt-upload-button">
                       {uploading === installment ? 'Enviando...' : receipt ? 'Reenviar' : 'Anexar'}
                       <input
-                        accept="image/*,.pdf"
+                        accept="image/jpeg,image/png,image/webp,application/pdf"
                         disabled={uploading !== null}
                         onChange={(event) => {
                           const file = event.currentTarget.files?.[0]

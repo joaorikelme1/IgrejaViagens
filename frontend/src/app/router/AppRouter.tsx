@@ -1,21 +1,24 @@
+import { lazy, Suspense } from 'react'
 import { Route, Routes } from 'react-router'
-import { AdminDashboardPage } from '../../features/admin/dashboard/pages/AdminDashboardPage'
-import { TripSettingsPage } from '../../features/admin/settings/pages/TripSettingsPage'
-import { AdminAssistantPage } from '../../features/assistant/pages/AdminAssistantPage'
-import { TravelerDashboardPage } from '../../features/traveler/dashboard/pages/TravelerDashboardPage'
-import { BusManagementPage } from '../../features/operations/pages/BusManagementPage'
-import { HotelManagementPage } from '../../features/operations/pages/HotelManagementPage'
-import { AdminPaymentsPage } from '../../features/payments/pages/AdminPaymentsPage'
-import { TravelerPaymentPage } from '../../features/payments/pages/TravelerPaymentPage'
-import { GlobalUsersPage } from '../../features/users/pages/GlobalUsersPage'
-import { TripTravelersPage } from '../../features/users/pages/TripTravelersPage'
 import { NotFoundPage } from '../../pages/NotFoundPage'
 import { LoginRoute } from './LoginRoute'
 import { ProtectedRoleLayout } from './ProtectedRoleLayout'
 import { RequireRole } from './guards/RequireRole'
 
+const AdminDashboardPage = lazy(() => import('../../features/admin/dashboard/pages/AdminDashboardPage').then((module) => ({ default: module.AdminDashboardPage })))
+const TripSettingsPage = lazy(() => import('../../features/admin/settings/pages/TripSettingsPage').then((module) => ({ default: module.TripSettingsPage })))
+const AdminAssistantPage = lazy(() => import('../../features/assistant/pages/AdminAssistantPage').then((module) => ({ default: module.AdminAssistantPage })))
+const TravelerDashboardPage = lazy(() => import('../../features/traveler/dashboard/pages/TravelerDashboardPage').then((module) => ({ default: module.TravelerDashboardPage })))
+const BusManagementPage = lazy(() => import('../../features/operations/pages/BusManagementPage').then((module) => ({ default: module.BusManagementPage })))
+const HotelManagementPage = lazy(() => import('../../features/operations/pages/HotelManagementPage').then((module) => ({ default: module.HotelManagementPage })))
+const AdminPaymentsPage = lazy(() => import('../../features/payments/pages/AdminPaymentsPage').then((module) => ({ default: module.AdminPaymentsPage })))
+const TravelerPaymentPage = lazy(() => import('../../features/payments/pages/TravelerPaymentPage').then((module) => ({ default: module.TravelerPaymentPage })))
+const GlobalUsersPage = lazy(() => import('../../features/users/pages/GlobalUsersPage').then((module) => ({ default: module.GlobalUsersPage })))
+const TripTravelersPage = lazy(() => import('../../features/users/pages/TripTravelersPage').then((module) => ({ default: module.TripTravelersPage })))
+
 export function AppRouter() {
   return (
+    <Suspense fallback={<main className="auth-session-loading" role="status">Carregando página...</main>}>
     <Routes>
       <Route path="/" element={<LoginRoute />} />
 
@@ -69,5 +72,6 @@ export function AppRouter() {
 
       <Route path="*" element={<NotFoundPage />} />
     </Routes>
+    </Suspense>
   )
 }

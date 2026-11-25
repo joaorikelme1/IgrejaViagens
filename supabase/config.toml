@@ -19,5 +19,9 @@ verify_jwt = false
 # A função exige JWT e também verifica se o solicitante é administrador.
 verify_jwt = true
 
+[functions.complete-first-access]
+# A troca da senha e a liberação do perfil acontecem no servidor.
+verify_jwt = true
+
 [storage]
 enabled = true

@@ -27,8 +27,8 @@ export function FirstAccessModal({
     event.preventDefault()
     setErrorMessage(null)
 
-    if (newPassword.length < 8) {
-      setErrorMessage('A senha deve ter ao menos 8 caracteres.')
+    if (newPassword.length < 10 || !/[a-zA-Z]/.test(newPassword) || !/\d/.test(newPassword)) {
+      setErrorMessage('Use ao menos 10 caracteres, com letras e números.')
       return
     }
 
@@ -91,9 +91,9 @@ export function FirstAccessModal({
                   autoFocus
                   disabled={isSubmitting}
                   id="new-password"
-                  minLength={8}
+                  minLength={10}
                   onChange={(event) => setNewPassword(event.target.value)}
-                  placeholder="Mínimo 8 caracteres"
+                  placeholder="Mínimo 10 caracteres, letras e números"
                   type="password"
                   value={newPassword}
                 />

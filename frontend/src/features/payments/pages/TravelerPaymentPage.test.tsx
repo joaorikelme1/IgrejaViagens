@@ -7,7 +7,7 @@ import { TravelerPaymentPage } from './TravelerPaymentPage'
 const mocks = vi.hoisted(() => ({
   listPayments: vi.fn(),
   readReceiptFile: vi.fn(),
-  savePayment: vi.fn(),
+  saveOwnPaymentPlan: vi.fn(),
   submitTravelerReceipt: vi.fn(),
   useAuth: vi.fn(),
   useTrip: vi.fn(),
@@ -17,7 +17,7 @@ vi.mock('../../auth/hooks/useAuth', () => ({ useAuth: mocks.useAuth }))
 vi.mock('../../trips/hooks/useTrip', () => ({ useTrip: mocks.useTrip }))
 vi.mock('../api/paymentApi', () => ({
   listPayments: mocks.listPayments,
-  savePayment: mocks.savePayment,
+  saveOwnPaymentPlan: mocks.saveOwnPaymentPlan,
   submitTravelerReceipt: mocks.submitTravelerReceipt,
 }))
 vi.mock('../utils/receiptFile', async (importOriginal) => {
@@ -65,7 +65,7 @@ describe('TravelerPaymentPage', () => {
       { ...payment, id: 'other', userCpf: '52998224725' },
     ])
     mocks.readReceiptFile.mockResolvedValue('data:image/png;base64,AA==')
-    mocks.savePayment.mockImplementation((mutation: PaymentMutation) => {
+    mocks.saveOwnPaymentPlan.mockImplementation((mutation: PaymentMutation) => {
       persistedMutation = mutation
       return Promise.resolve(mutation)
     })

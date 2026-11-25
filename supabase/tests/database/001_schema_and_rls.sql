@@ -1,5 +1,5 @@
 begin;
-select plan(26);
+select plan(44);
 
 select has_table('public', 'profiles', 'profiles exists');
 select has_table('public', 'trips', 'trips exists');
@@ -98,6 +98,23 @@ select ok(
   'hotel synchronization preserves room occupants'
 );
 
+select ok(public.is_valid_cpf('52998224725'), 'server accepts a CPF with valid check digits');
+select ok(not public.is_valid_cpf('11111111111'), 'server rejects repeated CPF digits');
+select has_function('public', 'save_own_payment_plan', array['uuid', 'smallint', 'smallint'], 'traveler payment-plan RPC exists');
+select has_function('public', 'review_payment_receipt', array['uuid', 'integer', 'receipt_status', 'text', 'bigint'], 'atomic receipt review RPC exists');
+select has_table('public', 'payment_audit_log', 'financial audit table exists');
+select ok((select relrowsecurity from pg_class where oid = 'public.payment_audit_log'::regclass), 'financial audit RLS is enabled');
+select ok(exists(select 1 from pg_trigger where tgrelid = 'public.seat_assignments'::regclass and tgname = 'seat_assignments_position' and not tgisinternal), 'seat capacity trigger exists');
+select ok(exists(select 1 from pg_trigger where tgrelid = 'public.room_occupants'::regclass and tgname = 'room_occupants_capacity' and not tgisinternal), 'room capacity trigger exists');
+select ok(exists(select 1 from pg_trigger where tgrelid = 'public.buses'::regclass and tgname = 'buses_capacity_update' and not tgisinternal), 'bus resize trigger exists');
+select ok(exists(select 1 from pg_trigger where tgrelid = 'public.rooms'::regclass and tgname = 'rooms_capacity_update' and not tgisinternal), 'room resize trigger exists');
+select ok(not exists(
+  select 1 from aclexplode((select proacl from pg_proc where oid = 'public.add_trip_traveler(uuid,uuid)'::regprocedure))
+  where grantee = 0 and privilege_type = 'EXECUTE'
+), 'PUBLIC cannot execute privileged membership RPC');
+select ok(not has_function_privilege('anon', 'public.add_trip_traveler(uuid,uuid)', 'execute'), 'anonymous role cannot execute privileged membership RPC');
+select ok(not has_function_privilege('authenticated', 'public.consume_assistant_quota(uuid)', 'execute'), 'clients cannot consume or bypass assistant quota directly');
+
 select lives_ok(
   $$select public.sync_family_relationships('00000000-0000-0000-0000-000000000002', '00000000-0000-0000-0000-000000000003', array['00000000-0000-0000-0000-000000000004'::uuid], array['Filho'])$$,
   'family relationships can be synchronized'
@@ -108,6 +125,43 @@ select ok(
   and exists(select 1 from public.family_relationships where parent_id = '00000000-0000-0000-0000-000000000002' and child_id = '00000000-0000-0000-0000-000000000004'),
   'family synchronization is reciprocal and persists children'
 );
+
+insert into public.payments(id, trip_id, traveler_id, total_installments) values
+  ('60000000-0000-0000-0000-000000000001', '10000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000002', 3),
+  ('60000000-0000-0000-0000-000000000002', '10000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000003', 3);
+update public.profiles set first_login = false where id = '00000000-0000-0000-0000-000000000002';
+
+select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-000000000002', true);
+select set_config('request.jwt.claim.role', 'authenticated', true);
+set local role authenticated;
+select results_eq(
+  $$select count(*)::bigint from public.profiles where id = '00000000-0000-0000-0000-000000000003'$$,
+  array[0::bigint],
+  'traveler cannot read another profile directly'
+);
+select results_eq(
+  $$select count(*)::bigint from public.payments where traveler_id = '00000000-0000-0000-0000-000000000003'$$,
+  array[0::bigint],
+  'traveler cannot read another payment'
+);
+select results_eq(
+  $$select count(*)::bigint from public.payments where traveler_id = '00000000-0000-0000-0000-000000000002'$$,
+  array[1::bigint],
+  'traveler can read only their own payment after first access'
+);
+select throws_ok(
+  $$update public.profiles set role = 'admin' where id = '00000000-0000-0000-0000-000000000002'$$,
+  '42501',
+  'forbidden',
+  'traveler cannot elevate their own role'
+);
+select throws_ok(
+  $$select public.replace_seat_assignments('10000000-0000-0000-0000-000000000001', '[]'::jsonb)$$,
+  '42501',
+  'forbidden',
+  'traveler cannot invoke administrative allocation RPC'
+);
+reset role;
 
 select * from finish();
 rollback;

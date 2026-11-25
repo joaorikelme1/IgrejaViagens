@@ -6,7 +6,6 @@ export function validateReceiptFile(file: File) {
   const isImage = [
     'image/png',
     'image/jpeg',
-    'image/gif',
     'image/webp',
   ].includes(file.type)
   const isPdf = file.type === 'application/pdf'
@@ -44,7 +43,7 @@ export function safeReceiptData(receipt: PaymentReceipt) {
   }
   if (
     receipt.type.startsWith('image/') &&
-    (/^data:image\/(?:png|jpe?g|gif|webp);base64,/i.test(value) ||
+    (/^data:image\/(?:png|jpe?g|webp);base64,/i.test(value) ||
       isSignedUrl)
   ) {
     return { kind: 'image' as const, value }

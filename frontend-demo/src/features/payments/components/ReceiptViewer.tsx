@@ -143,7 +143,7 @@ export function ReceiptViewer({
                             ? 'Substituir comprovante'
                             : 'Anexar comprovante'}
                         <input
-                          accept="image/*,.pdf"
+                          accept="image/jpeg,image/png,image/webp,application/pdf"
                           aria-label={`${receipt ? 'Substituir' : 'Anexar'} comprovante da parcela ${installment}`}
                           disabled={uploading !== null || saving !== null}
                           onChange={(event) => {

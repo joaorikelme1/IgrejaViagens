@@ -21,7 +21,7 @@ describe('UserForm', () => {
 
     await userEvent.type(screen.getByLabelText('Nome completo *'), 'Ana Lima')
     await userEvent.type(screen.getByLabelText('CPF *'), '11144477735')
-    await userEvent.type(screen.getByLabelText('Senha inicial *'), 'senha-segura')
+    await userEvent.type(screen.getByLabelText('Senha inicial *'), 'senha-segura1')
     await userEvent.click(screen.getByLabelText('Casado(a)'))
     await userEvent.type(screen.getByLabelText('Nome do cônjuge'), 'Bruno Lima')
     await userEvent.click(screen.getByLabelText('Tem filhos'))
@@ -39,7 +39,7 @@ describe('UserForm', () => {
         spouseName: 'Bruno Lima',
         hasKids: true,
         kids: ['Lia', 'Caio'],
-        initialPassword: 'senha-segura',
+        initialPassword: 'senha-segura1',
       }),
     )
   })
@@ -56,7 +56,7 @@ describe('UserForm', () => {
 
     await userEvent.type(screen.getByLabelText('Nome completo *'), 'Ana Lima')
     await userEvent.type(screen.getByLabelText('CPF *'), '11144477735')
-    await userEvent.type(screen.getByLabelText('Senha inicial *'), 'senha-segura')
+    await userEvent.type(screen.getByLabelText('Senha inicial *'), 'senha-segura1')
     await userEvent.click(screen.getByRole('button', { name: 'Salvar usuário' }))
 
     expect(await screen.findByRole('alert')).toHaveTextContent('Falha controlada')
@@ -89,7 +89,7 @@ describe('UserForm', () => {
 
     await userEvent.type(screen.getByLabelText('Nome completo *'), 'Ana Lima')
     await userEvent.type(screen.getByLabelText('CPF *'), '11144477735')
-    await userEvent.type(screen.getByLabelText('Senha inicial *'), 'senha-segura')
+    await userEvent.type(screen.getByLabelText('Senha inicial *'), 'senha-segura1')
     await userEvent.click(screen.getByLabelText('Casado(a)'))
     await userEvent.selectOptions(
       screen.getByLabelText('Vincular cadastro do cônjuge'),

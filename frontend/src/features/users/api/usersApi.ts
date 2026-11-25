@@ -66,7 +66,7 @@ async function syncRelations(profile: ProfileRow, mutation: UserMutation) {
 
 export async function createUser(cpfValue: string, mutation: UserMutation) {
   const cpf = stripCpf(cpfValue)
-  if (!mutation.initialPassword || mutation.initialPassword.length < 8) throw new Error('A senha inicial deve ter ao menos 8 caracteres.')
+  if (!mutation.initialPassword || mutation.initialPassword.length < 10 || !/[a-zA-Z]/.test(mutation.initialPassword) || !/\d/.test(mutation.initialPassword)) throw new Error('A senha inicial deve ter ao menos 10 caracteres, com letras e números.')
   await invokeProvisionUser({ cpf, password: mutation.initialPassword, name: mutation.name, role: mutation.role, birthdate: mutation.birthdate || null, firstLogin: mutation.firstLogin, married: mutation.married, spouseName: mutation.spouseName, hasKids: mutation.hasKids })
   const row = unwrap<ProfileRow>(await supabase.from('profiles').select('id, cpf, name, role, birthdate, first_login, married, spouse_name, spouse_id, has_kids, child_names').eq('cpf', cpf).single())
   await syncRelations(row, mutation)
@@ -89,4 +89,13 @@ export async function deleteUser(cpfValue: string) {
   const row = unwrap<{ id: string }>(await supabase.from('profiles').select('id').eq('cpf', cpf).single())
   // Deletar a identidade do Auth requer a Edge Function; esta rota não expõe service_role ao navegador.
   await invokeProvisionUser({ action: 'delete', userId: row.id })
+}
+
+export async function resetUserPassword(cpfValue: string, temporaryPassword: string) {
+  if (temporaryPassword.length < 10 || !/[a-zA-Z]/.test(temporaryPassword) || !/\d/.test(temporaryPassword)) {
+    throw new Error('Use ao menos 10 caracteres, com letras e números.')
+  }
+  const cpf = stripCpf(cpfValue)
+  const row = unwrap<{ id: string }>(await supabase.from('profiles').select('id').eq('cpf', cpf).single())
+  await invokeProvisionUser({ action: 'reset-password', userId: row.id, password: temporaryPassword })
 }

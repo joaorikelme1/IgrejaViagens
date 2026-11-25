@@ -1,13 +1,22 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { isValidCpf, normalizeCpf } from '../_shared/cpf.ts'
 
 const headers = {
   'content-type': 'application/json',
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-bootstrap-secret',
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
 }
-const cpf = (value: unknown) => String(value ?? '').replace(/\D/g, '')
 const internalEmail = (value: string) => `${value}@auth.igreja-viagens.invalid`
+const safeEqual = (left: string | null, right: string | undefined) => {
+  if (!left || !right) return false
+  const size = Math.max(left.length, right.length)
+  let difference = left.length ^ right.length
+  for (let index = 0; index < size; index += 1) {
+    difference |= (left.charCodeAt(index) || 0) ^ (right.charCodeAt(index) || 0)
+  }
+  return difference === 0
+}
 
 Deno.serve(async (request) => {
   if (request.method === 'OPTIONS') return new Response('ok', { headers })
@@ -19,7 +28,7 @@ Deno.serve(async (request) => {
     const { data: caller } = jwt ? await admin.auth.getUser(jwt) : { data: { user: null } }
     const bootstrap = request.headers.get('x-bootstrap-secret')
     const { count } = await admin.from('profiles').select('*', { count: 'exact', head: true })
-    const bootstrapAllowed = count === 0 && bootstrap && bootstrap === Deno.env.get('BOOTSTRAP_ADMIN_SECRET')
+    const bootstrapAllowed = count === 0 && safeEqual(bootstrap, Deno.env.get('BOOTSTRAP_ADMIN_SECRET'))
     if (!bootstrapAllowed) {
       if (!caller.user) return new Response(JSON.stringify({ error: 'Não autenticado.' }), { status: 401, headers })
       const { data: profile } = await admin.from('profiles').select('role').eq('id', caller.user.id).maybeSingle()
@@ -36,14 +45,22 @@ Deno.serve(async (request) => {
         if (countError) throw countError
         if ((count ?? 0) <= 1) return new Response(JSON.stringify({ error: 'Não é possível excluir o último administrador do sistema.' }), { status: 409, headers })
       }
-      const { error: membershipsError } = await admin.from('trip_travelers').delete().eq('traveler_id', userId)
-      if (membershipsError) throw membershipsError
       const { error } = await admin.auth.admin.deleteUser(userId)
       if (error) throw error
       return new Response(null, { status: 204, headers })
     }
-    const value = cpf(body.cpf)
-    if (!/^\d{11}$/.test(value) || typeof body.password !== 'string' || body.password.length < 8) {
+    if (body.action === 'reset-password') {
+      if (bootstrapAllowed || !body.userId || typeof body.password !== 'string' || body.password.length < 10 || body.password.length > 72 || !/[a-zA-Z]/.test(body.password) || !/\d/.test(body.password)) {
+        return new Response(JSON.stringify({ error: 'Redefinição de senha inválida.' }), { status: 400, headers })
+      }
+      const { error } = await admin.auth.admin.updateUserById(String(body.userId), { password: body.password })
+      if (error) throw error
+      const { error: profileError } = await admin.from('profiles').update({ first_login: true }).eq('id', String(body.userId))
+      if (profileError) throw profileError
+      return new Response(null, { status: 204, headers })
+    }
+    const value = normalizeCpf(body.cpf)
+    if (!isValidCpf(value) || typeof body.password !== 'string' || body.password.length < 10 || body.password.length > 72 || !/[a-zA-Z]/.test(body.password) || !/\d/.test(body.password) || !String(body.name ?? '').trim()) {
       return new Response(JSON.stringify({ error: 'Dados de provisionamento inválidos.' }), { status: 400, headers })
     }
     const role = bootstrapAllowed ? 'admin' : (body.role === 'admin' ? 'admin' : 'traveler')
@@ -60,6 +77,8 @@ Deno.serve(async (request) => {
     if (profileError) { await admin.auth.admin.deleteUser(data.user.id); throw profileError }
     return new Response(JSON.stringify({ id: data.user.id }), { status: 201, headers })
   } catch (error) {
-    return new Response(JSON.stringify({ error: error instanceof Error ? error.message : 'Erro ao provisionar usuário.' }), { status: 400, headers })
+    console.error('User provisioning failed', error)
+    const duplicate = error instanceof Error && /already registered|duplicate|unique/i.test(error.message)
+    return new Response(JSON.stringify({ error: duplicate ? 'CPF já cadastrado.' : 'Não foi possível concluir a operação de usuário.' }), { status: duplicate ? 409 : 400, headers })
   }
 })

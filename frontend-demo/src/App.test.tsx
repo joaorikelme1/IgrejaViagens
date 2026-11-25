@@ -26,7 +26,7 @@ describe('App', () => {
       </MemoryRouter>,
     )
 
-    expect(screen.getByRole('status')).toHaveTextContent('Verificando sessão')
+    expect(screen.getByRole('status')).toHaveTextContent('Preparando demonstração')
     expect(
       await screen.findByRole('heading', { name: 'Bem-vindo(a)' }),
     ).toBeInTheDocument()

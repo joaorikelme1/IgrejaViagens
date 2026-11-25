@@ -16,14 +16,18 @@ const mocks = vi.hoisted(() => ({
   loadSource: vi.fn(),
   printReport: vi.fn(),
   readReceiptFile: vi.fn(),
+  reviewPaymentReceipt: vi.fn(),
   savePayment: vi.fn(),
+  submitTravelerReceipt: vi.fn(),
   useTrip: vi.fn(),
 }))
 
 vi.mock('../../trips/hooks/useTrip', () => ({ useTrip: mocks.useTrip }))
 vi.mock('../api/paymentApi', () => ({
   loadPaymentSource: mocks.loadSource,
+  reviewPaymentReceipt: mocks.reviewPaymentReceipt,
   savePayment: mocks.savePayment,
+  submitTravelerReceipt: mocks.submitTravelerReceipt,
 }))
 vi.mock('../utils/receiptFile', () => ({
   readReceiptFile: mocks.readReceiptFile,
@@ -107,6 +111,15 @@ describe('AdminPaymentsPage', () => {
         id: mutation.id ?? mutation.userCpf + '_' + mutation.tripId,
       }),
     )
+    mocks.submitTravelerReceipt.mockImplementation((payment: PaymentRecord, installment: string, receipt: PaymentRecord['receipts'][string]) => Promise.resolve({
+      ...payment,
+      receipts: { ...payment.receipts, [installment]: receipt },
+    }))
+    mocks.reviewPaymentReceipt.mockImplementation((payment: PaymentRecord, installment: string, status: 'approved' | 'rejected', note: string = '') => Promise.resolve({
+      ...payment,
+      paidInstallments: status === 'approved' ? 1 : 0,
+      receipts: { ...payment.receipts, [installment]: { ...payment.receipts[installment], status, note } },
+    }))
   })
 
   afterEach(() => cleanup())
@@ -241,20 +254,17 @@ describe('AdminPaymentsPage', () => {
     })
     await userEvent.upload(input, file)
 
-    await waitFor(() => expect(mocks.savePayment).toHaveBeenCalled())
-    const savedMutation = mocks.savePayment.mock.lastCall?.[0] as
-      | PaymentMutation
-      | undefined
-    expect(savedMutation).toMatchObject({
-      id: source.payments[0].id,
-      userCpf: cpfs[0],
-    })
-    expect(savedMutation?.receipts['1']).toMatchObject({
+    await waitFor(() => expect(mocks.submitTravelerReceipt).toHaveBeenCalled())
+    expect(mocks.submitTravelerReceipt).toHaveBeenCalledWith(
+      expect.objectContaining({ id: source.payments[0].id, userCpf: cpfs[0] }),
+      '1',
+      expect.objectContaining({
       data: 'data:application/pdf;base64,dGVzdGU=',
       filename: 'parcela-1.pdf',
       status: 'pending',
       type: 'application/pdf',
-    })
+      }),
+    )
     expect(
       await screen.findByText(
         'Comprovante anexado pelo administrador e aguardando aprovação.',
@@ -287,12 +297,8 @@ describe('AdminPaymentsPage', () => {
     )
     await userEvent.click(screen.getByRole('button', { name: 'Aprovar' }))
 
-    await waitFor(() => expect(mocks.savePayment).toHaveBeenCalled())
-    const saved = mocks.savePayment.mock.calls.at(-1)?.[0] as PaymentRecord
-    expect(saved.id).toBe(receiptPayment.id)
-    expect(saved.paidInstallments).toBe(1)
-    expect(saved.receipts[1]).toMatchObject({ status: 'approved' })
-    expect(saved.receipts[1].data).toContain('/storage/v1/object/sign/')
+    await waitFor(() => expect(mocks.reviewPaymentReceipt).toHaveBeenCalled())
+    expect(mocks.reviewPaymentReceipt).toHaveBeenCalledWith(receiptPayment, '1', 'approved', '')
   })
 
   it('exibe erro de carregamento da API', async () => {

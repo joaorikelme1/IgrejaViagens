@@ -2,12 +2,12 @@ import { useEffect, useMemo, useState } from 'react'
 import { stripCpf } from '../../../shared/validation/cpf'
 import { useTrip } from '../../trips/hooks/useTrip'
 import type { Trip } from '../../trips/model/tripTypes'
-import { loadPaymentSource, savePayment } from '../api/paymentApi'
+import { loadPaymentSource, reviewPaymentReceipt, savePayment, submitTravelerReceipt } from '../api/paymentApi'
 import { FinancialSummary } from '../components/FinancialSummary'
 import { PaymentForm } from '../components/PaymentForm'
 import { PaymentTable } from '../components/PaymentTable'
 import { ReceiptViewer } from '../components/ReceiptViewer'
-import { buildPaymentRows, paymentWithReceiptStatus } from '../lib/buildPaymentRows'
+import { buildPaymentRows } from '../lib/buildPaymentRows'
 import { calculateFinancialSummary } from '../lib/paymentCalculations'
 import type {
   PaymentMutation,
@@ -129,13 +129,7 @@ function AdminPaymentsContent({ trip }: { trip: Trip }) {
   ) => {
     if (!receiptPayment) return
     setFeedback(null)
-    const updated = paymentWithReceiptStatus(
-      receiptPayment,
-      installment,
-      nextStatus,
-      note,
-    )
-    const saved = await savePayment(updated)
+    const saved = await reviewPaymentReceipt(receiptPayment, installment, nextStatus, note)
     replaceLocalPayment(saved)
     setReceiptPayment(saved)
     setFeedback(
@@ -149,26 +143,14 @@ function AdminPaymentsContent({ trip }: { trip: Trip }) {
     if (!receiptPayment) return
     setFeedback(null)
     const data = await readReceiptFile(file)
-    const withReceipt: PaymentRecord = {
-      ...receiptPayment,
-      receipts: {
-        ...receiptPayment.receipts,
-        [installment]: {
-          data,
-          date: new Intl.DateTimeFormat('pt-BR').format(new Date()),
-          filename: file.name,
-          note: '',
-          status: 'pending',
-          type: file.type,
-        },
-      },
-    }
-    const updated = paymentWithReceiptStatus(
-      withReceipt,
-      installment,
-      'pending',
-    )
-    const saved = await savePayment(updated)
+    const saved = await submitTravelerReceipt(receiptPayment, installment, {
+      data,
+      date: new Intl.DateTimeFormat('pt-BR').format(new Date()),
+      filename: file.name,
+      note: '',
+      status: 'pending',
+      type: file.type,
+    })
     replaceLocalPayment(saved)
     setReceiptPayment(saved)
     setFeedback('Comprovante anexado pelo administrador e aguardando aprovação.')

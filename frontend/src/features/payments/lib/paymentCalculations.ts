@@ -9,6 +9,22 @@ function finiteNonNegative(value: number) {
   return Number.isFinite(value) ? Math.max(0, value) : 0
 }
 
+export function paidAmountForInstallments(price: number, paid: number, total: number) {
+  const totalInstallments = Math.max(0, Math.trunc(total))
+  if (!totalInstallments) return 0
+  const paidInstallments = Math.min(totalInstallments, Math.max(0, Math.trunc(paid)))
+  const totalCents = Math.round(finiteNonNegative(price) * 100)
+  const baseCents = Math.floor(totalCents / totalInstallments)
+  const remainderCents = totalCents % totalInstallments
+  return (baseCents * paidInstallments + Math.min(paidInstallments, remainderCents)) / 100
+}
+
+export function installmentAmount(price: number, total: number, installment: number) {
+  const current = paidAmountForInstallments(price, installment, total)
+  const previous = paidAmountForInstallments(price, installment - 1, total)
+  return Math.round((current - previous) * 100) / 100
+}
+
 export function calculatePaymentProgress(
   payment: PaymentRecord | null | undefined,
 ): PaymentProgress {
@@ -71,17 +87,17 @@ export function calculateFinancialSummary(
       (item) => item.tripId === trip.id && item.userCpf === cpf,
     )
     const progress = calculatePaymentProgress(payment)
-    const paidRatio =
-      progress.totalInstallments > 0
-        ? progress.paidInstallments / progress.totalInstallments
-        : 0
-    collected += price * paidRatio
+    collected += paidAmountForInstallments(
+      price,
+      progress.paidInstallments,
+      progress.totalInstallments,
+    )
     if (progress.status === 'complete') completeCount += 1
     else if (progress.status === 'partial') partialCount += 1
     else pendingCount += 1
   })
 
-  collected = Math.min(expectedTotal, finiteNonNegative(collected))
+  collected = Math.round(Math.min(expectedTotal, finiteNonNegative(collected)) * 100) / 100
   const goal = finiteNonNegative(trip.arrecadationGoal) || expectedTotal
 
   return {

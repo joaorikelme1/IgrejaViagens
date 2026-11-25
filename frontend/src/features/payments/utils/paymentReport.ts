@@ -5,6 +5,7 @@ import type {
   PaymentRow,
   PaymentStatus,
 } from '../model/paymentTypes'
+import { paidAmountForInstallments } from '../lib/paymentCalculations'
 
 interface PaymentReportData {
   generatedAt?: Date
@@ -55,10 +56,11 @@ function receiptSummary(row: PaymentRow) {
 }
 
 function financialValues(row: PaymentRow, price: number) {
-  const ratio = row.progress.totalInstallments > 0
-    ? row.progress.paidInstallments / row.progress.totalInstallments
-    : 0
-  const paid = Math.max(0, price) * ratio
+  const paid = paidAmountForInstallments(
+    price,
+    row.progress.paidInstallments,
+    row.progress.totalInstallments,
+  )
   return { paid, pending: Math.max(0, price - paid) }
 }
 

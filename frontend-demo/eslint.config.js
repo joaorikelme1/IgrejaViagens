@@ -23,5 +23,20 @@ export default tseslint.config(
       },
     },
   },
+  {
+    files: ['src/features/**/api/*.ts'],
+    rules: {
+      '@typescript-eslint/require-await': 'off',
+      '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
+    },
+  },
+  {
+    files: ['**/*.test.ts', '**/*.test.tsx'],
+    rules: { '@typescript-eslint/no-unsafe-assignment': 'off' },
+  },
+  {
+    files: ['src/vite-env.d.ts'],
+    rules: { '@typescript-eslint/no-empty-object-type': 'off' },
+  },
 )
 

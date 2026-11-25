@@ -1,6 +1,6 @@
 import { supabase, unwrap } from '../../../infrastructure/supabase/client'
 import { cpfEmail } from '../../../infrastructure/supabase/repositories/shared'
-import { stripCpf } from '../../../shared/validation/cpf'
+import { isValidCpf, stripCpf } from '../../../shared/validation/cpf'
 import type { AuthUser, LoginCredentials, UserRole } from '../model/authTypes'
 
 type Profile = { id: string; cpf: string; name: string; role: UserRole; birthdate: string | null; first_login: boolean; married: boolean; spouse_name: string; has_kids: boolean; profile_photo_path: string | null }
@@ -36,7 +36,7 @@ export async function getCurrentUser() {
 
 export async function login(credentials: LoginCredentials) {
   const cpf = stripCpf(credentials.cpf)
-  if (!/^\d{11}$/.test(cpf)) throw new Error('Informe um CPF válido.')
+  if (!isValidCpf(cpf)) throw new Error('Informe um CPF válido.')
   unwrap(await supabase.auth.signInWithPassword({ email: cpfEmail(cpf), password: credentials.password }))
   return getCurrentUser()
 }
@@ -44,9 +44,12 @@ export async function login(credentials: LoginCredentials) {
 export async function logout() { unwrap(await supabase.auth.signOut()) }
 
 export async function completeFirstAccess(_user: AuthUser, newPassword: string) {
-  if (newPassword.length < 8) throw new Error('A nova senha deve ter ao menos 8 caracteres.')
-  const profile = await currentProfile()
-  unwrap(await supabase.auth.updateUser({ password: newPassword }))
-  unwrap(await supabase.from('profiles').update({ first_login: false }).eq('id', profile.id))
+  if (newPassword.length < 10 || !/[a-zA-Z]/.test(newPassword) || !/\d/.test(newPassword)) {
+    throw new Error('Use ao menos 10 caracteres, com letras e números.')
+  }
+  const response = await supabase.functions.invoke<{ completed: boolean }>('complete-first-access', {
+    body: { password: newPassword },
+  })
+  if (response.error) throw new Error('Não foi possível concluir o primeiro acesso.')
   return getCurrentUser()
 }

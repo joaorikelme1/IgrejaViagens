@@ -4,6 +4,8 @@ import type { PaymentRecord } from '../model/paymentTypes'
 import {
   calculateFinancialSummary,
   calculatePaymentProgress,
+  installmentAmount,
+  paidAmountForInstallments,
 } from './paymentCalculations'
 
 function payment(
@@ -91,5 +93,10 @@ describe('cálculos de pagamentos', () => {
     expect(summary.pendingValue).toBe(0)
     expect(summary.goalPercentage).toBe(0)
     expect(Object.values(summary).every(Number.isFinite)).toBe(true)
+  })
+
+  it('distribui centavos entre parcelas sem perder ou criar valor', () => {
+    expect([1, 2, 3].map((number) => installmentAmount(100, 3, number))).toEqual([33.34, 33.33, 33.33])
+    expect(paidAmountForInstallments(100, 3, 3)).toBe(100)
   })
 })

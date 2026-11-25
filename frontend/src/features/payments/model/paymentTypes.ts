@@ -21,6 +21,7 @@ export interface PaymentRecord {
   totalInstallments: number
   tripId: string
   userCpf: string
+  version?: number
 }
 
 export interface PaymentMutation {
@@ -32,6 +33,7 @@ export interface PaymentMutation {
   totalInstallments: number
   tripId: string
   userCpf: string
+  version?: number
 }
 
 export interface PaymentProgress {

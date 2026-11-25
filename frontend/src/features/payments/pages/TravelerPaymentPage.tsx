@@ -2,11 +2,11 @@ import { useEffect, useState } from 'react'
 import { useAuth } from '../../auth/hooks/useAuth'
 import { useTrip } from '../../trips/hooks/useTrip'
 import type { Trip } from '../../trips/model/tripTypes'
-import { listPayments, savePayment, submitTravelerReceipt } from '../api/paymentApi'
+import { listPayments, saveOwnPaymentPlan, submitTravelerReceipt } from '../api/paymentApi'
 import { PaymentStatusBadge } from '../components/PaymentStatusBadge'
 import { ReceiptViewer } from '../components/ReceiptViewer'
 import { TravelerPaymentPlan } from '../components/TravelerPaymentPlan'
-import { calculatePaymentProgress } from '../lib/paymentCalculations'
+import { calculatePaymentProgress, installmentAmount } from '../lib/paymentCalculations'
 import type { PaymentMutation, PaymentRecord } from '../model/paymentTypes'
 import { readReceiptFile } from '../utils/receiptFile'
 import './payments.css'
@@ -58,7 +58,7 @@ function TravelerPaymentContent({
   const persistPlan = async (mutation: PaymentMutation) => {
     setError(null)
     setFeedback(null)
-    const saved = await savePayment(mutation)
+    const saved = await saveOwnPaymentPlan(mutation)
     setPayment(saved)
     setFeedback('Parcelamento confirmado após a persistência.')
   }
@@ -105,7 +105,7 @@ function TravelerPaymentContent({
   const installmentCount = payment
     ? Math.min(24, Math.max(1, Math.trunc(payment.totalInstallments) || 1))
     : 0
-  const installmentValue = installmentCount > 0 ? trip.price / installmentCount : 0
+  const installmentValue = installmentCount > 0 ? installmentAmount(trip.price, installmentCount, 1) : 0
 
   return (
     <div className="payments-page traveler-payments">
@@ -144,14 +144,14 @@ function TravelerPaymentContent({
               return (
                 <article key={installment}>
                   <span>{installment}</span>
-                  <div><strong>Parcela {installment}</strong><small>{currency(installmentValue)} · vencimento dia {payment.dueDay}</small>{receipt?.note ? <small className="payment-warning">Motivo: {receipt.note}</small> : null}</div>
+                  <div><strong>Parcela {installment}</strong><small>{currency(installmentAmount(trip.price, installmentCount, Number(installment)))} · vencimento dia {payment.dueDay}</small>{receipt?.note ? <small className="payment-warning">Motivo: {receipt.note}</small> : null}</div>
                   {isPaid ? <small className="payment-confirmed">Pagamento registrado</small> : null}
                   <span className={`receipt-status is-${receipt?.status ?? 'none'}`}>{receipt ? receipt.status === 'approved' ? 'Confirmado pelo administrador' : receipt.status === 'rejected' ? 'Recusado' : 'Aguardando confirmação' : isPaid ? 'Paga' : 'Sem comprovante'}</span>
                   {receipt?.status !== 'approved' ? (
                     <label className="receipt-upload-button">
                       {uploading === installment ? 'Enviando...' : receipt ? 'Reenviar' : 'Anexar'}
                       <input
-                        accept="image/*,.pdf"
+                        accept="image/jpeg,image/png,image/webp,application/pdf"
                         disabled={uploading !== null}
                         onChange={(event) => {
                           const file = event.currentTarget.files?.[0]
